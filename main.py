@@ -1,7 +1,7 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform, QBrush
-from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF
+from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF
 from PyQt5.QtWidgets import QGraphicsScene
 from PyQt5.QtPrintSupport import QPrinter
 from ui import Ui_MainWindow
@@ -67,12 +67,27 @@ class MyUI(QtWidgets.QMainWindow):
         TL = QPoint(0, 0)
         BR = QPoint(0, 0)
         brush = QBrush(QColor(0, 0, 0, 50))
-        pen = QPen(QColor(0,0,0,255))
+        empty_pen = QPen(QColor(0,0,0,255))
+        # no line at all
+        empty_pen.setStyle(0)
+        full_pen = QPen(QColor(255,255,255))
+        dot_pen = QPen(QColor(0,0,0))
+        dot_pen.setStyle(3)
 
-        self.graphics_crop_rect_bottom = self.graphics.addRect(QRectF(TL, BR), brush= brush, pen= pen)
-        self.graphics_crop_rect_top = self.graphics.addRect(QRectF(TL, BR))
-        self.graphics_crop_rect_left = self.graphics.addRect(QRectF(TL, BR))
-        self.graphics_crop_rect_right = self.graphics.addRect(QRectF(TL, BR))
+        self.graphics_crop_rect_bottom = self.graphics.addRect(QRectF(TL, BR), brush= brush, pen= empty_pen)
+        self.graphics_crop_rect_top = self.graphics.addRect(QRectF(TL, BR), brush= brush, pen= empty_pen)
+        self.graphics_crop_rect_left = self.graphics.addRect(QRectF(TL, BR), brush= brush, pen= empty_pen)
+        self.graphics_crop_rect_right = self.graphics.addRect(QRectF(TL, BR), brush= brush, pen= empty_pen)
+
+        self.graphics_crop_line_full_bottom = self.graphics.addLine(QLineF(TL, BR), pen=full_pen)
+        self.graphics_crop_line_full_top = self.graphics.addLine(QLineF(TL, BR), pen=full_pen)
+        self.graphics_crop_line_full_left = self.graphics.addLine(QLineF(TL, BR), pen=full_pen)
+        self.graphics_crop_line_full_right = self.graphics.addLine(QLineF(TL, BR), pen=full_pen)
+
+        self.graphics_crop_line_dot_bottom = self.graphics.addLine(QLineF(TL, BR), pen=dot_pen)
+        self.graphics_crop_line_dot_top = self.graphics.addLine(QLineF(TL, BR), pen=dot_pen)
+        self.graphics_crop_line_dot_left = self.graphics.addLine(QLineF(TL, BR), pen=dot_pen)
+        self.graphics_crop_line_dot_right = self.graphics.addLine(QLineF(TL, BR), pen=dot_pen)
 
     def pdf_button(self):
         image_non_cropped = QImage(self.image_location)
@@ -113,8 +128,27 @@ class MyUI(QtWidgets.QMainWindow):
             ui.spinBoxCropTop.setValue(ui.spinBoxCropBottom.value())
         self.changeCrop()
 
+    def checkVisibility(self):
+        self.graphics_crop_line_full_bottom.setVisible(self.widgets.spinBoxCropBottom.value() != 0)
+        self.graphics_crop_line_dot_bottom.setVisible(self.widgets.spinBoxCropBottom.value() != 0)
+        self.graphics_crop_rect_bottom.setVisible(self.widgets.spinBoxCropBottom.value() != 0)
+
+        self.graphics_crop_line_full_top.setVisible(self.widgets.spinBoxCropTop.value() != 0)
+        self.graphics_crop_line_dot_top.setVisible(self.widgets.spinBoxCropTop.value() != 0)
+        self.graphics_crop_rect_top.setVisible(self.widgets.spinBoxCropTop.value() != 0)
+
+        self.graphics_crop_line_full_right.setVisible(self.widgets.spinBoxCropRight.value() != 0)
+        self.graphics_crop_line_dot_right.setVisible(self.widgets.spinBoxCropRight.value() != 0)
+        self.graphics_crop_rect_right.setVisible(self.widgets.spinBoxCropRight.value() != 0)
+
+        self.graphics_crop_line_full_left.setVisible(self.widgets.spinBoxCropLeft.value() != 0)
+        self.graphics_crop_line_dot_left.setVisible(self.widgets.spinBoxCropLeft.value() != 0)
+        self.graphics_crop_rect_left.setVisible(self.widgets.spinBoxCropLeft.value() != 0)
+
+
     def changeCrop(self):
         print("crop changed")
+        self.checkVisibility()
         if self.widgets.spinBoxCropBottom.value() != 0 \
            or self.widgets.spinBoxCropTop.value() != 0 \
            or self.widgets.spinBoxCropLeft.value() != 0 \
@@ -127,26 +161,51 @@ class MyUI(QtWidgets.QMainWindow):
 
         image_size = self.current_pixmap.size()
 
-        rel_crop_left = (self.widgets.spinBoxCropLeft.value() / image_size.width()) * widget_size.width()
-        rel_crop_right = (self.widgets.spinBoxCropRight.value() / image_size.width()) * widget_size.width()
+        crop_left_pos = int((self.widgets.spinBoxCropLeft.value() / image_size.width()) * widget_size.width())
+        crop_right_px = (self.widgets.spinBoxCropRight.value() / image_size.width()) * widget_size.width()
+        crop_right_pos = int(widget_size.width() - crop_right_px)
 
-        rel_crop_top = (self.widgets.spinBoxCropTop.value() / image_size.height()) * widget_size.height()
-        rel_crop_bottom = (self.widgets.spinBoxCropBottom.value() / image_size.height()) * widget_size.height()
+        crop_top_pos = int((self.widgets.spinBoxCropTop.value() / image_size.height()) * widget_size.height())
+        crop_bottom_px = (self.widgets.spinBoxCropBottom.value() / image_size.height()) * widget_size.height()
+        crop_bottom_pos = int(widget_size.height() - crop_bottom_px)
 
         bottom_right = QPointF(widget_size.width(),widget_size.height())
 
-        point_rect_top_bottom = QPoint(widget_size.width(),rel_crop_top)
+        point_rect_top_bottom = QPoint(widget_size.width(),crop_top_pos)
         self.graphics_crop_rect_top.setRect(QRectF(QPointF(0,0), point_rect_top_bottom))
 
-        point_rect_bottom_top = QPoint(0, bottom_right.y() - rel_crop_bottom)
+        point_rect_bottom_top = QPoint(0, bottom_right.y() - crop_bottom_px)
         self.graphics_crop_rect_bottom.setRect(QRectF(point_rect_bottom_top, bottom_right))
 
-        point_rect_left_bottom = QPoint(rel_crop_left, widget_size.height() - rel_crop_bottom)
-        self.graphics_crop_rect_left.setRect(QRectF(QPointF(0,rel_crop_top), point_rect_left_bottom))
+        point_rect_left_bottom = QPoint(crop_left_pos, crop_bottom_pos)
+        self.graphics_crop_rect_left.setRect(QRectF(QPointF(0,crop_top_pos), point_rect_left_bottom))
 
-        point_rect_right_top = QPointF(widget_size.width() - rel_crop_right, rel_crop_top)
-        point_rect_right_bottom = QPointF(widget_size.width(), widget_size.height() - rel_crop_bottom)
+        point_rect_right_top = QPointF(widget_size.width() - crop_right_px, crop_top_pos)
+        point_rect_right_bottom = QPointF(widget_size.width(), crop_bottom_pos)
         self.graphics_crop_rect_right.setRect(QRectF(point_rect_right_top, point_rect_right_bottom))
+        
+        point_line_TL = QPointF(crop_left_pos, crop_top_pos)
+        point_line_TR = QPointF(crop_right_pos, crop_top_pos)
+        point_line_BR = QPointF(crop_right_pos, crop_bottom_pos)
+        point_line_BL = QPointF(crop_left_pos, crop_bottom_pos)
+
+
+        line_top = QLineF(point_line_TL, point_line_TR)
+        line_bottom = QLineF(point_line_BL, point_line_BR)
+        line_left = QLineF(point_line_TL, point_line_BL)
+        line_right = QLineF(point_line_TR, point_line_BR)
+
+        self.graphics_crop_line_full_bottom.setLine(line_bottom)
+        self.graphics_crop_line_full_top.setLine(line_top)
+        self.graphics_crop_line_full_left.setLine(line_left)
+        self.graphics_crop_line_full_right.setLine(line_right)
+
+        self.graphics_crop_line_dot_bottom.setLine(line_bottom)
+        self.graphics_crop_line_dot_top.setLine(line_top)
+        self.graphics_crop_line_dot_left.setLine(line_left)
+        self.graphics_crop_line_dot_right.setLine(line_right)
+
+
 
     def paintEvent(self, *args, **kwargs):
         print("Paint Event")
