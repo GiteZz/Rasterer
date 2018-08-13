@@ -1,7 +1,8 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform
-from PyQt5.QtCore import QPoint, QRect
+from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform, QBrush
+from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF
+from PyQt5.QtWidgets import QGraphicsScene
 from PyQt5.QtPrintSupport import QPrinter
 from ui import Ui_MainWindow
 import math
@@ -24,13 +25,23 @@ class MyUI(QtWidgets.QMainWindow):
         self.textbox_width = 0.1 * monitor_width
         self.widgets = None
         self.addCropMarks = False
-        self.current_pixmap = None
+
         self.color_background = QColor(125,125,125, 100)
 
         self.lock_crop_TB = False
         self.lock_crop_LR = False
 
         self.image_location = "C:/Users/Gilles/Pictures/TestImages/falcon9morning.jpg"
+
+        self.current_pixmap = QPixmap(QImage(self.image_location))
+
+        self.graphics = QGraphicsScene()
+        self.graphics_pixmap = None
+
+        self.graphics_crop_rect_bottom = None
+        self.graphics_crop_rect_top = None
+        self.graphics_crop_rect_left = None
+        self.graphics_crop_rect_right = None
 
     def confirmUI(self, ui_widgets):
         self.widgets = ui_widgets
@@ -43,6 +54,25 @@ class MyUI(QtWidgets.QMainWindow):
         ui.checkBoxLockTB.stateChanged.connect(self.lockCheckBoxChanged)
 
         ui.pushButtonCreatePDF.clicked.connect(self.pdf_button)
+
+        self.widgets.graphicsView.setScene(self.graphics)
+
+        pix_size = self.current_pixmap.scaled(self.widgets.graphicsView.size())
+
+        self.graphics_pixmap = self.graphics.addPixmap(pix_size)
+
+        self.widgets.graphicsView.setHorizontalScrollBarPolicy(1)
+        self.widgets.graphicsView.setVerticalScrollBarPolicy(1)
+
+        TL = QPoint(0, 0)
+        BR = QPoint(0, 0)
+        brush = QBrush(QColor(0, 0, 0, 50))
+        pen = QPen(QColor(0,0,0,255))
+
+        self.graphics_crop_rect_bottom = self.graphics.addRect(QRectF(TL, BR), brush= brush, pen= pen)
+        self.graphics_crop_rect_top = self.graphics.addRect(QRectF(TL, BR))
+        self.graphics_crop_rect_left = self.graphics.addRect(QRectF(TL, BR))
+        self.graphics_crop_rect_right = self.graphics.addRect(QRectF(TL, BR))
 
     def pdf_button(self):
         image_non_cropped = QImage(self.image_location)
@@ -93,54 +123,54 @@ class MyUI(QtWidgets.QMainWindow):
         else:
             self.addCropMarks = False
 
-        widget_size = self.widgets.mainImageLabel.size()
+        widget_size = self.widgets.graphicsView.size()
 
-        image_size = self.pixmap.size()
+        image_size = self.current_pixmap.size()
 
-        rel_crop_left = int((self.widgets.spinBoxCropLeft.value() / image_size.width()) * widget_size.width())
-        rel_crop_right = int((self.widgets.spinBoxCropRight.value() / image_size.width()) * widget_size.width())
+        rel_crop_left = (self.widgets.spinBoxCropLeft.value() / image_size.width()) * widget_size.width()
+        rel_crop_right = (self.widgets.spinBoxCropRight.value() / image_size.width()) * widget_size.width()
 
-        rel_crop_top = int((self.widgets.spinBoxCropTop.value() / image_size.height()) * widget_size.height())
-        rel_crop_bottom = int((self.widgets.spinBoxCropBottom.value() / image_size.height()) * widget_size.height())
+        rel_crop_top = (self.widgets.spinBoxCropTop.value() / image_size.height()) * widget_size.height()
+        rel_crop_bottom = (self.widgets.spinBoxCropBottom.value() / image_size.height()) * widget_size.height()
 
-        bottom_right = QPoint(widget_size.width(),widget_size.height())
+        bottom_right = QPointF(widget_size.width(),widget_size.height())
 
         point_rect_top_bottom = QPoint(widget_size.width(),rel_crop_top)
-        self.rect_top = QRect(QPoint(0,0), point_rect_top_bottom)
+        self.graphics_crop_rect_top.setRect(QRectF(QPointF(0,0), point_rect_top_bottom))
 
         point_rect_bottom_top = QPoint(0, bottom_right.y() - rel_crop_bottom)
-        self.rect_bottom = QRect(point_rect_bottom_top, bottom_right)
+        self.graphics_crop_rect_bottom.setRect(QRectF(point_rect_bottom_top, bottom_right))
 
         point_rect_left_bottom = QPoint(rel_crop_left, widget_size.height() - rel_crop_bottom)
-        self.rect_left = QRect(QPoint(0,rel_crop_top), point_rect_left_bottom)
+        self.graphics_crop_rect_left.setRect(QRectF(QPointF(0,rel_crop_top), point_rect_left_bottom))
 
-        point_rect_right_top = QPoint(widget_size.width() - rel_crop_right, rel_crop_top)
-        point_rect_right_bottom = QPoint(widget_size.width(), widget_size.height() - rel_crop_bottom)
-        self.rect_right = QRect(point_rect_right_top, point_rect_right_bottom)
+        point_rect_right_top = QPointF(widget_size.width() - rel_crop_right, rel_crop_top)
+        point_rect_right_bottom = QPointF(widget_size.width(), widget_size.height() - rel_crop_bottom)
+        self.graphics_crop_rect_right.setRect(QRectF(point_rect_right_top, point_rect_right_bottom))
 
     def paintEvent(self, *args, **kwargs):
         print("Paint Event")
-        new_pixmap = QPixmap(self.current_pixmap)
-        qp = QtGui.QPainter(new_pixmap)
-        qp.begin(self)
-        if self.addCropMarks:
-            qp.fillRect(self.rect_bottom, self.color_background)
-            qp.fillRect(self.rect_top, self.color_background)
-            qp.fillRect(self.rect_left, self.color_background)
-            qp.fillRect(self.rect_right, self.color_background)
-
-        self.widgets.mainImageLabel.setPixmap(new_pixmap)
-        qp.end()
+        super().paintEvent(*args, **kwargs)
+        # new_pixmap = QPixmap(self.current_pixmap)
+        # qp = QtGui.QPainter(new_pixmap)
+        # qp.begin(self)
+        # if self.addCropMarks:
+        #     qp.fillRect(self.rect_bottom, self.color_background)
+        #     qp.fillRect(self.rect_top, self.color_background)
+        #     qp.fillRect(self.rect_left, self.color_background)
+        #     qp.fillRect(self.rect_right, self.color_background)
+        #
+        # self.widgets.mainImageLabel.setPixmap(new_pixmap)
+        # qp.end()
 
     def resizeEvent(self, *args, **kwargs):
         super().resizeEvent(*args, **kwargs)
         print("resize event")
 
-        #handle inputtext
-        if self.added_image:
-            pix_size = self.pixmap.scaled(self.widgets.mainImageLabel.size())
-            self.widgets.mainImageLabel.setPixmap(pix_size)
-            self.current_pixmap = pix_size
+        pix_size = self.current_pixmap.scaled(self.widgets.graphicsView.size())
+
+        self.graphics_pixmap.setPixmap(pix_size)
+        self.changeCrop()
 
     def set_image(self, location):
         self.added_image = True
@@ -363,7 +393,7 @@ if __name__ == "__main__":
 
     ui.setupUi(MainWindow)
     MainWindow.confirmUI(ui)
-    MainWindow.set_image(image_location)
+    #MainWindow.set_image(image_location)
 
     MainWindow.show()
     sys.exit(app.exec_())
