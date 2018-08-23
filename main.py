@@ -60,18 +60,16 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.widgets.centralWidget.layout().setContentsMargins(0,0,0,0)
 
-        #ui.menuOpen_File.aboutToShow.connect(self.new_file)
-
         ui.checkBoxLockLR.stateChanged.connect(self.lockCheckBoxChanged)
         ui.checkBoxLockTB.stateChanged.connect(self.lockCheckBoxChanged)
 
         ui.pushButtonCreatePDF.clicked.connect(self.pdf_button)
 
-        self.widgets.graphicsView.setScene(self.graphics)
+        self.widgets.graphicsViewFullImage.setScene(self.graphics)
 
         # disable scroll bars
-        self.widgets.graphicsView.setHorizontalScrollBarPolicy(1)
-        self.widgets.graphicsView.setVerticalScrollBarPolicy(1)
+        self.widgets.graphicsViewFullImage.setHorizontalScrollBarPolicy(1)
+        self.widgets.graphicsViewFullImage.setVerticalScrollBarPolicy(1)
 
         # used to create dummy rectangles
         TL = QPoint(0, 0)
@@ -112,20 +110,24 @@ class MyUI(QtWidgets.QMainWindow):
 
     def pdf_button(self):
         """ Create the rasterized pdf """
-        image_non_cropped = QImage(self.image_location)
-        im_size = image_non_cropped.size()
-        crop_left_pos, crop_right_px, crop_top_pos, crop_bottom_px = self.get_crop_values(relative=False)
 
-        crop_top_left = QPoint(crop_left_pos, crop_top_pos)
-        crop_bottom_right = QPoint(im_size.width() - crop_right_px, im_size.height() - crop_bottom_px)
+        printer = QPrinter(mode=QPrinter.HighResolution)
+        printer.setOutputFileName("hello.pdf")
+        printer.setOutputFormat(QPrinter.PdfFormat)
+        printer.setFullPage(True)
+        printer.setPaperSize(QPrinter.A4)
 
-        image_cropped = image_non_cropped.copy(QRect(crop_top_left, crop_bottom_right))
+        painter = QPainter()
+        painter.begin(printer)
 
-        marking = ["halfCross", "fullCross", "fullLine", "nothing"][self.widgets.comboBoxMarking.currentIndex()]
-        createPDF(image_cropped,
-                  self.widgets.spinBoxPDFMarginX.value(), self.widgets.spinBoxPDFMarginY.value(),
-                  self.widgets.spinBoxDesiredSize.value(), self.widgets.comboBoxDesiredAxis.currentText(),
-                  marking, self.widgets.comboBoxPageRotation.currentText(), "new.pdf")
+        pdf_x_px = printer.width()
+        pdf_y_px = printer.height()
+
+        pdf_values = self.getPDF_values(pdf_x_px, pdf_y_px)
+
+        createPDF(self.widgets.comboBoxMarking.currentText(), *pdf_values, printer, painter)
+
+        painter.end()
 
     def lockCheckBoxChanged(self):
         self.lock_crop_TB = ui.checkBoxLockTB.isChecked()
@@ -161,7 +163,7 @@ class MyUI(QtWidgets.QMainWindow):
         self.changeCrop()
 
     def checkVisibility(self):
-        """ Hides lines and rects on the graphicsview if they are not necessary """
+        """ Hides lines and rects on the graphicsViewFullImage if they are not necessary """
         self.graphics_crop_line_full_bottom.setVisible(self.widgets.spinBoxCropBottom.value() != 0)
         self.graphics_crop_line_dot_bottom.setVisible(self.widgets.spinBoxCropBottom.value() != 0)
         self.graphics_crop_rect_bottom.setVisible(self.widgets.spinBoxCropBottom.value() != 0)
@@ -178,6 +180,8 @@ class MyUI(QtWidgets.QMainWindow):
         self.graphics_crop_line_dot_left.setVisible(self.widgets.spinBoxCropLeft.value() != 0)
         self.graphics_crop_rect_left.setVisible(self.widgets.spinBoxCropLeft.value() != 0)
 
+    def drawPDFImage(self):
+        pass
 
     def get_crop_value_left(self):
         image_size = self.current_pixmap.size()
@@ -234,12 +238,14 @@ class MyUI(QtWidgets.QMainWindow):
 
     def changeCrop(self):
         print("crop changed")
-
         if self.image_location is None:
             pass
 
+        # if certain crop values are zero this function hides the specific rects/lines
         self.checkVisibility()
 
+        # the pixmap is allready scaled in resizeEvent so we can take the size here
+        # the scale factor are needed to compensate for the smaller/larger image
         scaled_pix_size = self.graphics_pixmap.pixmap().size()
         scale_x = scaled_pix_size.width() / self.image_width
         scale_y = scaled_pix_size.height() / self.image_height
@@ -249,11 +255,10 @@ class MyUI(QtWidgets.QMainWindow):
         crop_right_pos = int(scaled_pix_size.width() - crop_right_px)
         crop_bottom_pos = int(scaled_pix_size.height() - crop_bottom_px)
 
+        widget_size = self.widgets.graphicsViewFullImage.size()
 
-        print("Crop px (top, bottom, left, right): ", crop_top_px, crop_bottom_pos, crop_left_px, crop_right_pos)
-        widget_size = self.widgets.graphicsView.size()
-
-
+        # these are coordinates where in the grahpicsview the image is
+        # the image is centered so everything is symmetrical
         image_y_top = self.dy
         image_y_bottom = widget_size.height() - self.dy
 
@@ -266,6 +271,7 @@ class MyUI(QtWidgets.QMainWindow):
         crop_x_left = image_x_left + crop_left_px
         crop_x_right = image_x_right - crop_right_px
 
+        # these are the coordinates that contain the cropped image relative to the graphicsViewFullImage
         rect_top_TL = QPointF(image_x_left, image_y_top)
         rect_top_BR = QPointF(image_x_right, crop_y_top)
 
@@ -278,11 +284,16 @@ class MyUI(QtWidgets.QMainWindow):
         rect_right_TL = QPointF(crop_x_right, crop_y_top)
         rect_right_BR = QPointF(image_x_right, crop_y_bottom)
 
+        # the top/bottom rect fill the whole width of the image
+        # the left/right only fill in the range between the top and bottom rect
+        # this is used to not have overlapping rects mess up the alpha
         self.graphics_crop_rect_top.setRect(QRectF(rect_top_TL, rect_top_BR))
         self.graphics_crop_rect_bottom.setRect(QRectF(rect_bottom_TL, rec_bottom_BR))
         self.graphics_crop_rect_left.setRect(QRectF(rect_left_TL, rect_left_BR))
         self.graphics_crop_rect_right.setRect(QRectF(rect_right_TL, rect_right_BR))
-        
+
+        # the coordinates are uses to draw al line between the section that gets cropped away
+        # and the section that stays
         point_line_TL = QPointF(crop_x_left, crop_y_top)
         point_line_TR = QPointF(crop_x_right, crop_y_top)
         point_line_BR = QPointF(crop_x_right, crop_y_bottom)
@@ -311,11 +322,11 @@ class MyUI(QtWidgets.QMainWindow):
 
     def fix_image_size(self):
         if self.image_location is not None:
-            pix_size = self.current_pixmap.scaled(self.widgets.graphicsView.size(), aspectRatioMode=1)
+            pix_size = self.current_pixmap.scaled(self.widgets.graphicsViewFullImage.size(), aspectRatioMode=1)
             print("scene: ", self.graphics.sceneRect())
-            self.dx = (self.widgets.graphicsView.size().width() - pix_size.size().width())/2
-            self.dy = (self.widgets.graphicsView.size().height() - pix_size.size().height())/2
-            print("dx: ", self.dx, " dy: ", self.dy, " size graphics: ", self.widgets.graphicsView.size(), " scaled pix: ", pix_size.size())
+            self.dx = (self.widgets.graphicsViewFullImage.size().width() - pix_size.size().width())/2
+            self.dy = (self.widgets.graphicsViewFullImage.size().height() - pix_size.size().height())/2
+            print("dx: ", self.dx, " dy: ", self.dy, " size graphics: ", self.widgets.graphicsViewFullImage.size(), " scaled pix: ", pix_size.size())
             print("current offset: ", self.graphics_pixmap.offset())
             self.graphics_pixmap.setPixmap(pix_size)
             self.graphics_pixmap.setOffset(QPointF(self.dx,self.dy))
@@ -342,6 +353,60 @@ class MyUI(QtWidgets.QMainWindow):
             self.fix_image_size()
         else:
             self.fix_image_size()
+
+
+    def getPDF_values(self, pdf_x_px, pdf_y_px):
+        image_non_cropped = QImage(self.image_location)
+        im_size = image_non_cropped.size()
+        crop_left_px, crop_right_px, crop_top_px, crop_bottom_px = self.get_crop_values()
+
+        crop_top_left = QPoint(crop_left_px, crop_top_px)
+        crop_bottom_right = QPoint(im_size.width() - crop_right_px, im_size.height() - crop_bottom_px)
+
+        image_cropped = image_non_cropped.copy(QRect(crop_top_left, crop_bottom_right))
+
+        margin_x_mm = self.widgets.spinBoxPDFMarginX.value()
+        margin_y_mm = self.widgets.spinBoxPDFMarginY.value()
+        desired_mm = self.widgets.spinBoxDesiredSize.value()
+        desired_direction = self.widgets.comboBoxDesiredAxis.currentText()
+        page_rotation = self.widgets.comboBoxPageRotation.currentText()
+
+        A4_width = 210  # mm
+        A4_height = 297  # mm
+
+        # instead of using a different function, just rotate the image and change the desired direction
+        if page_rotation == "horizontal":
+            transform = QTransform()
+            transform.rotate(90)
+            image_cropped = image_cropped.transformed(transform)
+            if desired_direction == "wide":
+                desired_direction = "heigh"
+            else:
+                desired_direction = "wide"
+
+        im_size = image_cropped.size()
+        im_width = im_size.width()
+        im_height = im_size.height()
+        im_ratio = im_width / im_height
+
+        if desired_direction == "wide":
+            des_x_mm = desired_mm
+            des_y_mm = des_x_mm * (1 / im_ratio)
+        else:
+            des_y_mm = desired_mm
+            des_x_mm = des_y_mm * im_ratio
+
+        # available pixels in x and y direction
+        av_x_mm = A4_width - 2 * margin_x_mm
+        av_y_mm = A4_height - 2 * margin_y_mm
+
+        av_x_px = (av_x_mm / A4_width) * pdf_x_px
+        av_y_px = (av_y_mm / A4_height) * pdf_y_px
+
+        amount_x = des_x_mm / av_x_mm
+        amount_y = des_y_mm / av_y_mm
+
+        return image_cropped, amount_x, amount_y, av_x_px, av_y_px
 
 def drawHalfCross(point_TL, point_BR, margin_x_px, margin_y_px, max_x, max_y, painter):
     pen = QPen(QColor(0,0,0))
@@ -405,79 +470,38 @@ def drawFullLine(point_TL, point_BR, margin_x_px, margin_y_px, max_x, max_y, pai
 def drawNothing(point_TL, point_BR, margin_x_px, margin_y_px, max_x, max_y, painter):
     pass
 
-def createPDF(image, margin_x_mm, margin_y_mm, desired_mm, desired_direction, marking, page_rotation, pdf_name):
+def createPDF(marking, image, amount_x, amount_y, av_x_px, av_y_px, printer, painter):
     """ Divides image over multiple pdf pages according to the parameters """
-    A4_width = 210  # mm
-    A4_height = 297  # mm
-
-    printer = QPrinter(mode=QPrinter.HighResolution)
-    printer.setOutputFileName(pdf_name)
-    printer.setOutputFormat(QPrinter.PdfFormat)
-    printer.setFullPage(True)
-    printer.setPaperSize(QPrinter.A4)
-
-    mark_function = drawNothing
-
-    if marking == "fullCross":
-        mark_function = drawFullCross
-    if marking == "halfCross":
-        mark_function = drawHalfCross
-    if marking == "fullLine":
-        mark_function = drawFullLine
-
-    painter = QPainter()
-    painter.begin(printer)
-
-    # instead of using a different function, just rotate the image and change the disired direction
-    if page_rotation == "horizontal":
-        transform = QTransform()
-        transform.rotate(90)
-        image = image.transformed(transform)
-        if desired_direction == "wide":
-            desired_direction = "heigh"
-        else:
-            desired_direction = "wide"
-
-    im_size = image.size()
-    im_width = im_size.width()
-    im_height = im_size.height()
-    im_ratio = im_width / im_height
-
-    if desired_direction == "wide":
-        des_x_mm = desired_mm
-        des_y_mm = des_x_mm * (1 / im_ratio)
-    else:
-        des_y_mm = desired_mm
-        des_x_mm = des_y_mm * im_ratio
-
     pdf_x_px = printer.width()
     pdf_y_px = printer.height()
 
-    # available pixels in x and y direction
-    av_x_mm = A4_width - 2 * margin_x_mm
-    av_y_mm = A4_height - 2 * margin_y_mm
+    image_size = image.size()
+    im_x_px = image_size.width()
+    im_y_px = image_size.height()
 
-    margin_x_px = (margin_x_mm / A4_width) * pdf_x_px
-    margin_y_px = (margin_y_mm / A4_height) * pdf_y_px
+    mark_function = drawNothing
 
-    av_x_px = (av_x_mm / A4_width) * pdf_x_px
-    av_y_px = (av_y_mm / A4_height) * pdf_y_px
+    if marking == "Full cross":
+        mark_function = drawFullCross
+    if marking == "Half cross":
+        mark_function = drawHalfCross
+    if marking == "Full line":
+        mark_function = drawFullLine
 
-    amount_x = des_x_mm / av_x_mm
-    amount_y = des_y_mm / av_y_mm
+    amount_whole_x = math.floor(amount_x)
+    amount_whole_y = math.floor(amount_y)
 
-    seg_im_x_px = im_width / amount_x
-    seg_im_y_px = im_height / amount_y
+    seg_im_x_px = im_x_px / amount_x
+    seg_im_y_px = im_y_px / amount_y
 
-    amount_whole_x = int(math.floor(amount_x))
-    amount_rest_x = amount_x - amount_whole_x
-    target_rest_x_px = amount_rest_x * av_x_px
-    source_rest_x_px = im_width - amount_whole_x * seg_im_x_px
+    im_rest_x_px = im_x_px - amount_whole_x * seg_im_x_px
+    im_rest_y_px = im_y_px - amount_whole_y * seg_im_y_px
 
-    amount_whole_y = int(math.floor(amount_y))
-    amount_rest_y = amount_y - amount_whole_y
-    target_rest_y_px = amount_rest_y * av_y_px
-    source_rest_y_px = im_height - amount_whole_y * seg_im_y_px
+    pdf_rest_x_px = (amount_x - amount_whole_x) * pdf_x_px
+    pdf_rest_y_px = (amount_y - amount_whole_y) * pdf_y_px
+
+    margin_x_px = (pdf_x_px - av_x_px) / 2
+    margin_y_px = (pdf_y_px - av_y_px) /2
 
     # print the parts of the image that take up a whole page
     for x in range(amount_whole_x):
@@ -498,13 +522,13 @@ def createPDF(image, margin_x_mm, margin_y_mm, desired_mm, desired_direction, ma
             printer.newPage()
 
     # print the partial pages in the y direction
-    if source_rest_y_px != 0:
+    if im_rest_y_px != 0:
         for x in range(amount_whole_x):
             target_top_left = QPoint(margin_x_px, margin_y_px)
-            target_bottom_right = QPoint(margin_x_px + av_x_px, margin_y_px + target_rest_y_px)
+            target_bottom_right = QPoint(margin_x_px + av_x_px, margin_y_px + pdf_rest_y_px)
 
             source_top_left = QPoint(x * seg_im_x_px, amount_whole_y * seg_im_y_px)
-            source_bottom_right = QPoint((x + 1) * seg_im_x_px, amount_whole_y * seg_im_y_px + source_rest_y_px)
+            source_bottom_right = QPoint((x + 1) * seg_im_x_px, amount_whole_y * seg_im_y_px + im_rest_y_px)
 
             rect_target = QRect(target_top_left, target_bottom_right)
             rect_source = QRect(source_top_left, source_bottom_right)
@@ -516,13 +540,13 @@ def createPDF(image, margin_x_mm, margin_y_mm, desired_mm, desired_direction, ma
             printer.newPage()
 
     # print the partial pages in the x direction
-    if source_rest_x_px != 0:
+    if im_rest_x_px != 0:
         for y in range(amount_whole_y):
             target_top_left = QPoint(margin_x_px, margin_y_px)
-            target_bottom_right = QPoint(margin_x_px + target_rest_x_px, margin_y_px + av_y_px)
+            target_bottom_right = QPoint(margin_x_px + pdf_rest_x_px, margin_y_px + av_y_px)
 
             source_top_left = QPoint(amount_whole_x * seg_im_x_px, y * seg_im_y_px)
-            source_bottom_right = QPoint(amount_whole_x * seg_im_x_px + source_rest_x_px, (y + 1) * seg_im_y_px)
+            source_bottom_right = QPoint(amount_whole_x * seg_im_x_px + im_rest_x_px, (y + 1) * seg_im_y_px)
 
             rect_target = QRect(target_top_left, target_bottom_right)
             rect_source = QRect(source_top_left, source_bottom_right)
@@ -534,13 +558,13 @@ def createPDF(image, margin_x_mm, margin_y_mm, desired_mm, desired_direction, ma
             printer.newPage()
 
     # print the corner consisting of both partial pages
-    if source_rest_x_px != 0 and source_rest_y_px != 0:
+    if im_rest_x_px != 0 and im_rest_y_px != 0:
         target_top_left = QPoint(margin_x_px, margin_y_px)
-        target_bottom_right = QPoint(margin_x_px + target_rest_x_px, margin_y_px + target_rest_y_px)
+        target_bottom_right = QPoint(margin_x_px + pdf_rest_x_px, margin_y_px + pdf_rest_y_px)
 
         source_top_left = QPoint((amount_whole_x + 1) * seg_im_x_px, (amount_whole_y + 1) * seg_im_y_px)
-        source_bottom_right = QPoint((amount_whole_x + 1) * seg_im_x_px + source_rest_x_px,
-                                     (amount_whole_y + 1) * seg_im_y_px + source_rest_y_px)
+        source_bottom_right = QPoint((amount_whole_x + 1) * seg_im_x_px + im_rest_x_px,
+                                     (amount_whole_y + 1) * seg_im_y_px + im_rest_y_px)
 
         rect_target = QRect(target_top_left, target_bottom_right)
         rect_source = QRect(source_top_left, source_bottom_right)
@@ -549,7 +573,7 @@ def createPDF(image, margin_x_mm, margin_y_mm, desired_mm, desired_direction, ma
 
         mark_function(target_top_left, target_bottom_right, margin_x_px, margin_y_px, pdf_x_px, pdf_y_px, painter)
 
-    painter.end()
+
 
 if __name__ == "__main__":
     monitor_width = 1920
@@ -562,6 +586,7 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.confirmUI(ui)
     #MainWindow.set_image(image_location)
+    MainWindow.set_image("C:/Users/Gilles/Downloads/100_0045_20180806182421.jpg")
 
     MainWindow.show()
     sys.exit(app.exec_())
