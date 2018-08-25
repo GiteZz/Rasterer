@@ -9,25 +9,28 @@ import math
 import logging
 
 class graphicsHelper:
-    def __init__(self, widget, crop_rect=None, pixmap=None):
+    def __init__(self, widget, pixmap=None, crop_image=True):
         self.original_pix = pixmap
         self.scaled_pix = pixmap
         self.cropped_pix = pixmap
 
         self.widget = widget
 
-        self.widget_x_px = None
-        self.widget_y_px = None
-        self.im_x_px = None
-        self.im_y_px = None
+        self.crop_image = crop_image
 
-        self.crop_rect = crop_rect
+        self.crop_left_px = None
+        self.crop_right_px = None
+        self.crop_bottom_px = None
+        self.crop_top_px = None
 
         self.graphics = QGraphicsScene()
         self.widget.setScene(self.graphics)
 
         self.widget.setHorizontalScrollBarPolicy(1)
         self.widget.setVerticalScrollBarPolicy(1)
+
+        self.im_x_px = None
+        self.im_y_px = None
 
         if pixmap is not None:
             self.graphics_pixmap = self.graphics.addPixmap(pixmap)
@@ -43,23 +46,45 @@ class graphicsHelper:
 
         if self.original_pix is not None:
             self.update_image_info()
+            self.update_tab_function()
+
+    def change_crop(self, crop_left_px, crop_right_px, crop_top_px, crop_bottom_px):
+        self.crop_bottom_px = crop_bottom_px
+        self.crop_top_px = crop_top_px
+        self.crop_left_px = crop_left_px
+        self.crop_right_px = crop_right_px
+
+        self.update()
+
+    def get_crop_rect(self):
+        image_size = self.original_pix.size()
+        im_x_px = image_size.width()
+        im_y_px = image_size.height()
+
+        rect_TL = QPoint(self.crop_left_px, self.crop_top_px)
+        rect_BR = QPoint(im_x_px - self.crop_right_px, im_y_px - self.crop_bottom_px)
+
+        return QRect(rect_TL, rect_BR)
 
     def update_image_info(self):
-        widget_size = self.widget.size()
+        self.image_size = self.original_pix.size()
+        self.im_x_px = self.image_size.width()
+        self.im_y_px = self.image_size.height()
 
-        if self.crop_rect is not None:
-            self.cropped_pix = self.original_pix.copy(self.crop_rect)
+        if self.crop_right_px is not None and self.crop_image:
+            crop_rect = self.get_crop_rect()
+            self.cropped_pix = self.original_pix.copy(crop_rect)
         else:
             self.cropped_pix = self.original_pix
 
-        self.scaled_pix = self.cropped_pix.scaled(widget_size, aspectRatioMode=1)
+        self.scaled_pix = self.cropped_pix.scaled(self.widget_size, aspectRatioMode=1)
 
         image_size = self.scaled_pix.size()
-        self.im_x_px = image_size.width()
-        self.im_y_px = image_size.height()
+        self.scaled_im_x_px = image_size.width()
+        self.scaled_im_y_px = image_size.height()
 
-        self.offset_x_px = int((self.widget_x_px - self.im_x_px) / 2)
-        self.offset_y_px = int((self.widget_y_px - self.im_y_px) / 2)
+        self.offset_x_px = int((self.widget_x_px - self.scaled_im_x_px) / 2)
+        self.offset_y_px = int((self.widget_y_px - self.scaled_im_y_px) / 2)
 
         if self.graphics_pixmap is not None:
             self.graphics_pixmap.setPixmap(self.scaled_pix)
@@ -73,9 +98,12 @@ class graphicsHelper:
         self.original_pix = QPixmap(QImage(location))
         self.update_image_info()
 
+    def update_tab_function(self):
+        pass
+
 class graphicsCrop(graphicsHelper):
-    def __init__(self, widget, crop_rect=None, pixmap=None):
-        super().__init__(widget, crop_rect=crop_rect, pixmap=pixmap)
+    def __init__(self, widget, pixmap=None):
+        super().__init__(widget, pixmap=pixmap, crop_image=False)
 
         self.crop_left_px = None
         self.crop_right_px = None
@@ -113,38 +141,36 @@ class graphicsCrop(graphicsHelper):
         self.graphics_crop_line_dot_left = self.graphics.addLine(QLineF(TL, BR), pen=dot_pen)
         self.graphics_crop_line_dot_right = self.graphics.addLine(QLineF(TL, BR), pen=dot_pen)
 
-    def check_visibility(self, crop_left_px, crop_right_px, crop_top_px, crop_bottom_px):
-        self.graphics_crop_line_full_bottom.setVisible(crop_bottom_px != 0)
-        self.graphics_crop_line_dot_bottom.setVisible(crop_bottom_px != 0)
-        self.graphics_crop_rect_bottom.setVisible(crop_bottom_px != 0)
+    def check_visibility(self):
+        self.graphics_crop_line_full_bottom.setVisible(self.crop_bottom_px != 0)
+        self.graphics_crop_line_dot_bottom.setVisible(self.crop_bottom_px != 0)
+        self.graphics_crop_rect_bottom.setVisible(self.crop_bottom_px != 0)
 
-        self.graphics_crop_line_full_top.setVisible(crop_top_px != 0)
-        self.graphics_crop_line_dot_top.setVisible(crop_top_px != 0)
-        self.graphics_crop_rect_top.setVisible(crop_top_px != 0)
+        self.graphics_crop_line_full_top.setVisible(self.crop_top_px != 0)
+        self.graphics_crop_line_dot_top.setVisible(self.crop_top_px != 0)
+        self.graphics_crop_rect_top.setVisible(self.crop_top_px != 0)
 
-        self.graphics_crop_line_full_right.setVisible(crop_right_px != 0)
-        self.graphics_crop_line_dot_right.setVisible(crop_right_px != 0)
-        self.graphics_crop_rect_right.setVisible(crop_right_px != 0)
+        self.graphics_crop_line_full_right.setVisible(self.crop_right_px != 0)
+        self.graphics_crop_line_dot_right.setVisible(self.crop_right_px != 0)
+        self.graphics_crop_rect_right.setVisible(self.crop_right_px != 0)
 
-        self.graphics_crop_line_full_left.setVisible(crop_left_px != 0)
-        self.graphics_crop_line_dot_left.setVisible(crop_left_px != 0)
-        self.graphics_crop_rect_left.setVisible(crop_left_px != 0)
+        self.graphics_crop_line_full_left.setVisible(self.crop_left_px != 0)
+        self.graphics_crop_line_dot_left.setVisible(self.crop_left_px != 0)
+        self.graphics_crop_rect_left.setVisible(self.crop_left_px != 0)
 
-    def change_crop(self, crop_left_px, crop_right_px, crop_top_px, crop_bottom_px):
-        self.check_visibility(crop_left_px, crop_right_px, crop_top_px, crop_bottom_px)
+    def update_tab_function(self):
+        if self.crop_left_px is None:
+            return
+
+        self.check_visibility()
         scale_x = self.scaled_pix.size().width() / self.im_x_px
         scale_y = self.scaled_pix.size().height() / self.im_y_px
 
-        crop_left_px *= scale_x
-        crop_right_px *= scale_x
+        crop_left_scale_px = self.crop_left_px * scale_x
+        crop_right_scale_px = self.crop_right_px * scale_x
 
-        crop_top_px *= scale_y
-        crop_bottom_px *= scale_y
-
-        self.crop_left_px = crop_left_px
-        self.crop_right_px = crop_right_px
-        self.crop_top_px = crop_top_px
-        self.crop_bottom_px = crop_bottom_px
+        crop_top_scale_px = self.crop_top_px * scale_y
+        crop_bottom_scale_px = self.crop_bottom_px * scale_y
 
         image_y_top = self.offset_y_px
         image_y_bottom = self.widget_y_px - self.offset_y_px
@@ -152,11 +178,11 @@ class graphicsCrop(graphicsHelper):
         image_x_left = self.offset_x_px
         image_x_right = self.widget_x_px - self.offset_x_px
 
-        crop_y_top = image_y_top + crop_top_px
-        crop_y_bottom = image_y_bottom - crop_bottom_px
+        crop_y_top = image_y_top + crop_top_scale_px
+        crop_y_bottom = image_y_bottom - crop_bottom_scale_px
 
-        crop_x_left = image_x_left + crop_left_px
-        crop_x_right = image_x_right - crop_right_px
+        crop_x_left = image_x_left + crop_left_scale_px
+        crop_x_right = image_x_right - crop_right_scale_px
 
         # these are the coordinates that contain the cropped image relative to the graphicsViewFullImage
         rect_top_TL = QPointF(image_x_left, image_y_top)
@@ -200,3 +226,9 @@ class graphicsCrop(graphicsHelper):
         self.graphics_crop_line_dot_top.setLine(line_top)
         self.graphics_crop_line_dot_left.setLine(line_left)
         self.graphics_crop_line_dot_right.setLine(line_right)
+
+class graphicsPDF(graphicsHelper):
+    def __init__(self, widget, pixmap=None):
+        super().__init__(widget, pixmap=pixmap, crop_image=True)
+
+

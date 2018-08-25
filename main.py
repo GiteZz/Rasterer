@@ -7,7 +7,7 @@ from PyQt5.QtPrintSupport import QPrinter
 from ui import Ui_MainWindow
 import math
 import logging
-from graphics_classes import graphicsCrop
+from graphics_classes import graphicsCrop, graphicsPDF
 
 image_location = "C:/Users/Gilles/Pictures/TestImages/falcon9morning.jpg"
 
@@ -25,13 +25,14 @@ class MyUI(QtWidgets.QMainWindow):
         self.image_width = None
         self.image_height = None
 
-        self.gr_tab1 = None
+        self.graphic_tabs = []
 
         self.logger = logging.getLogger('main')
         self.logger.info("logger started")
         self.logger.error("hello")
 
     def confirmUI(self, ui_widgets):
+        print("confirming ui")
         self.widgets = ui_widgets
         self.widgets.spinBoxCropTop.valueChanged.connect(self.changeCropTop)
         self.widgets.spinBoxCropBottom.valueChanged.connect(self.changeCropBottom)
@@ -54,7 +55,10 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.widgets.graphicsViewFullImage.setScene(self.graphics)
 
-        self.gr_tab1 = graphicsCrop(self.widgets.graphicsViewFullImage)
+        self.graphic_tabs.append(graphicsCrop(self.widgets.graphicsViewFullImage))
+        self.graphic_tabs.append(graphicsPDF(self.widgets.graphicsViewPDFImage))
+
+        self.widgets.tabWidget.currentChanged.connect(self.tab_changed)
 
 
     def new_file(self):
@@ -83,6 +87,11 @@ class MyUI(QtWidgets.QMainWindow):
         createPDF(self.widgets.comboBoxMarking.currentText(), *pdf_values, printer, painter)
 
         painter.end()
+
+    def tab_changed(self):
+        print("tab changed")
+        for tab in self.graphic_tabs:
+            tab.update()
 
     def lockCheckBoxChanged(self):
         self.lock_crop_TB = ui.checkBoxLockTB.isChecked()
@@ -117,11 +126,9 @@ class MyUI(QtWidgets.QMainWindow):
             self.widgets.cropTopType.setCurrentIndex(self.widgets.cropBottomType.currentIndex())
         self.changeCrop()
 
-    def drawPDFImage(self):
-        pass
-
     def get_crop_value_left(self):
-        image_size = self.gr_tab1.original_pix.size()
+        image_size = self.graphic_tabs[0].original_pix.size()
+        # TODO maybe replace with dict, but tabs are in order so maybe not
 
         if self.widgets.cropLeftType.currentText() == "px":
             crop_left_px = self.widgets.spinBoxCropLeft.value()
@@ -131,7 +138,7 @@ class MyUI(QtWidgets.QMainWindow):
         return crop_left_px
 
     def get_crop_value_right(self):
-        image_size = self.gr_tab1.original_pix.size()
+        image_size = self.graphic_tabs[0].original_pix.size()
 
         if self.widgets.cropRightType.currentText() == "px":
             crop_right_px = self.widgets.spinBoxCropRight.value()
@@ -141,7 +148,7 @@ class MyUI(QtWidgets.QMainWindow):
         return crop_right_px
 
     def get_crop_value_top(self):
-        image_size = self.gr_tab1.original_pix.size()
+        image_size = self.graphic_tabs[0].original_pix.size()
 
         if self.widgets.cropTopType.currentText() == "px":
             crop_top_px = self.widgets.spinBoxCropTop.value()
@@ -151,7 +158,7 @@ class MyUI(QtWidgets.QMainWindow):
         return crop_top_px
 
     def get_crop_value_bottom(self):
-        image_size = self.gr_tab1.original_pix.size()
+        image_size = self.graphic_tabs[0].original_pix.size()
 
         if self.widgets.cropBottomType.currentText() == "px":
             crop_bottom_px = self.widgets.spinBoxCropBottom.value()
@@ -175,26 +182,24 @@ class MyUI(QtWidgets.QMainWindow):
 
     def changeCrop(self):
         print("crop changed")
-        self.gr_tab1.change_crop(*self.get_crop_values())
-
+        crop_values = self.get_crop_values()
+        for tab in self.graphic_tabs:
+            tab.change_crop(*crop_values)
 
     def resizeEvent(self, *args, **kwargs):
         super().resizeEvent(*args, **kwargs)
         print("resize event")
-        self.gr_tab1.update()
+        for tab in self.graphic_tabs:
+            tab.update()
 
     def set_image(self, location):
         print("setting image from: ", location)
-        self.gr_tab1.set_image(location)
-        image_size = self.gr_tab1.scaled_pix.size()
-        self.image_height = image_size.height()
-        self.image_width = image_size.width()
 
-        self.widgets.spinBoxCropBottom.setMaximum(self.image_height)
-        self.widgets.spinBoxCropTop.setMaximum(self.image_height)
+        for tab in self.graphic_tabs:
+            tab.set_image(location)
 
-        self.widgets.spinBoxCropRight.setMaximum(self.image_width)
-        self.widgets.spinBoxCropLeft.setMaximum(self.image_width)
+
+        # TODO set maximum for spinboxes
 
     def get_cropped_image(self):
         image_non_cropped = QImage(self.image_location)
