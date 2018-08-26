@@ -60,6 +60,11 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.widgets.tabWidget.currentChanged.connect(self.tab_changed)
 
+        self.widgets.spinBoxDesiredSize.valueChanged.connect(self.pdf_values_change)
+        self.widgets.spinBoxPDFMarginX.valueChanged.connect(self.pdf_values_change)
+        self.widgets.spinBoxPDFMarginY.valueChanged.connect(self.pdf_values_change)
+        self.widgets.comboBoxPageRotation.currentIndexChanged.connect(self.pdf_values_change)
+        self.widgets.comboBoxDesiredAxis.currentIndexChanged.connect(self.pdf_values_change)
 
     def new_file(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file',
@@ -185,6 +190,17 @@ class MyUI(QtWidgets.QMainWindow):
         crop_values = self.get_crop_values()
         for tab in self.graphic_tabs:
             tab.change_crop(*crop_values)
+
+    def pdf_values_change(self):
+        # pdate_pdf_values(self, des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical)
+        des_size_mm = self.widgets.spinBoxDesiredSize.value()
+        width = self.widgets.comboBoxDesiredAxis.currentText() == "wide"
+        margin_x_mm = self.widgets.spinBoxPDFMarginX.value()
+        margin_y_mm = self.widgets.spinBoxPDFMarginY.value()
+        A4_vertical = self.widgets.comboBoxPageRotation.currentText() == "vertical"
+
+        self.graphic_tabs[1].update_pdf_values(des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical)
+        print("pdf values changed")
 
     def resizeEvent(self, *args, **kwargs):
         super().resizeEvent(*args, **kwargs)
