@@ -57,6 +57,7 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.graphic_tabs.append(graphicsCrop(self.widgets.graphicsViewFullImage))
         self.graphic_tabs.append(graphicsPDF(self.widgets.graphicsViewPDFImage))
+        self.pdf_values_change()
 
         self.widgets.tabWidget.currentChanged.connect(self.tab_changed)
 
@@ -199,7 +200,7 @@ class MyUI(QtWidgets.QMainWindow):
         margin_y_mm = self.widgets.spinBoxPDFMarginY.value()
         A4_vertical = self.widgets.comboBoxPageRotation.currentText() == "vertical"
 
-        self.graphic_tabs[1].update_pdf_values(des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical)
+        self.graphic_tabs[1].set_pdf_values(des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical)
         print("pdf values changed")
 
     def resizeEvent(self, *args, **kwargs):

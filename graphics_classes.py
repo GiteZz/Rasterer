@@ -1,12 +1,7 @@
-import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform, QBrush
-from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF, QSize, QSizeF
-from PyQt5.QtWidgets import QGraphicsScene, QFileDialog
-from PyQt5.QtPrintSupport import QPrinter
-from ui import Ui_MainWindow
+from PyQt5.QtGui import QImage, QPixmap, QColor, QPen, QBrush
+from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF, QSize
+from PyQt5.QtWidgets import QGraphicsScene
 import math
-import logging
 
 class graphicsHelper:
     def __init__(self, widget, pixmap=None, crop_image=True, show_image=True):
@@ -69,6 +64,7 @@ class graphicsHelper:
         return QRect(rect_TL, rect_BR)
 
     def update_image_info(self):
+        """ This function creates 2 additional pixmap from the original and updates the information"""
         self.image_size = self.original_pix.size()
         self.im_x_px = self.image_size.width()
         self.im_y_px = self.image_size.height()
@@ -137,6 +133,7 @@ class graphicsCrop(graphicsHelper):
         self.graphics_crop_rect_left = self.graphics.addRect(QRectF(TL, BR), brush=brush, pen=empty_pen)
         self.graphics_crop_rect_right = self.graphics.addRect(QRectF(TL, BR), brush=brush, pen=empty_pen)
 
+        # the full line with the crop line simulates a white/black dotted line
         self.graphics_crop_line_full_bottom = self.graphics.addLine(QLineF(TL, BR), pen=full_pen)
         self.graphics_crop_line_full_top = self.graphics.addLine(QLineF(TL, BR), pen=full_pen)
         self.graphics_crop_line_full_left = self.graphics.addLine(QLineF(TL, BR), pen=full_pen)
@@ -148,6 +145,7 @@ class graphicsCrop(graphicsHelper):
         self.graphics_crop_line_dot_right = self.graphics.addLine(QLineF(TL, BR), pen=dot_pen)
 
     def check_visibility(self):
+        """ If crop is zero then hide the parts that show that specific crop"""
         self.graphics_crop_line_full_bottom.setVisible(self.crop_bottom_px != 0)
         self.graphics_crop_line_dot_bottom.setVisible(self.crop_bottom_px != 0)
         self.graphics_crop_rect_bottom.setVisible(self.crop_bottom_px != 0)
@@ -165,6 +163,7 @@ class graphicsCrop(graphicsHelper):
         self.graphics_crop_rect_left.setVisible(self.crop_left_px != 0)
 
     def update_tab_function(self):
+        """ This function shows the cropped zones of the image in the graphicsview"""
         if self.crop_left_px is None:
             return
 
@@ -239,55 +238,65 @@ class graphicsPDF(graphicsHelper):
         self.A4_x_mm = 210
         self.A4_y_mm = 297
 
-        self.paper_list = []
+        self.graphic_list = []
 
         self.brush = QBrush(QColor(0, 0, 0, 0))
 
-    def update_pdf_values(self, des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical):
-        # clear items
+        self.des_size_mm = None
+        self.width = None
+        self.margin_x_mm = None
+        self.margin_y_mm = None
+        self.A4_vertical = None
+
+    def set_pdf_values(self, des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical):
         self.des_size_mm = des_size_mm
         self.width = width
         self.margin_x_mm = margin_x_mm
         self.margin_y_mm = margin_y_mm
         self.A4_vertical = A4_vertical
 
+        if self.original_pix is not None:
+            self.update_tab_function()
 
-        for item in self.paper_list:
+    def update_tab_function(self):
+        """ This function draws the images like they where split in A4 pages on a graphicsview"""
+        # clear items
+        for item in self.graphic_list:
             self.graphics.removeItem(item)
-        self.paper_list = []
+        self.graphic_list = []
 
-        A4_av_x_mm = self.A4_x_mm - 2 * margin_x_mm
-        A4_av_y_mm = self.A4_y_mm - 2 * margin_y_mm
+        A4_av_x_mm = self.A4_x_mm - 2 * self.margin_x_mm
+        A4_av_y_mm = self.A4_y_mm - 2 * self.margin_y_mm
 
         im_x_px = self.cropped_pix.size().width()
         im_y_px = self.cropped_pix.size().height()
 
-        if width:
-            des_size_x_mm = des_size_mm
+        # is width is True then the dis_size_mm is in the x direction, otherwise in the y
+        if self.width:
+            des_size_x_mm = self.des_size_mm
             des_size_y_mm = (im_y_px / im_x_px) * des_size_x_mm
         else:
-            des_size_y_mm = des_size_mm
+            des_size_y_mm = self.des_size_mm
             des_size_x_mm = (im_x_px / im_y_px) * des_size_y_mm
 
-        crop_im_ratio = im_x_px / im_y_px
         widget_ratio = self.widget_x_px / self.widget_y_px
         A4_ratio = self.A4_x_mm / self.A4_y_mm
 
         # if vertical is true the image spans across normal places A4's otherwise across horizontal A4's
-        if A4_vertical:
+        if self.A4_vertical:
             des_A4_x = des_size_x_mm / A4_av_x_mm
             des_A4_y = des_size_y_mm / A4_av_y_mm
 
-            margin_fac_x = margin_x_mm / self.A4_x_mm
-            margin_fac_y = margin_y_mm / self.A4_y_mm
+            margin_fac_x = self.margin_x_mm / self.A4_x_mm
+            margin_fac_y = self.margin_y_mm / self.A4_y_mm
         else:
             des_A4_x = des_size_x_mm / A4_av_y_mm
             des_A4_y = des_size_y_mm / A4_av_x_mm
 
             A4_ratio = 1 / A4_ratio
 
-            margin_fac_y = margin_x_mm / self.A4_x_mm
-            margin_fac_x = margin_y_mm / self.A4_y_mm
+            margin_fac_y = self.margin_x_mm / self.A4_x_mm
+            margin_fac_x = self.margin_y_mm / self.A4_y_mm
 
         paint_ratio = (math.ceil(des_A4_x)/math.ceil(des_A4_y)) * A4_ratio
 
@@ -298,42 +307,46 @@ class graphicsPDF(graphicsHelper):
             dy = 0
             dx = (self.widget_x_px - math.ceil(des_A4_x) * A4_rect_x_px) / 2
         else:
+            # width is limiting factor
             A4_rect_x_px = self.widget_x_px / math.ceil(des_A4_x)
             A4_rect_y_px = A4_rect_x_px * (1 / A4_ratio)
             dx = 0
             dy = (self.widget_y_px - math.ceil(des_A4_y) * A4_rect_y_px) / 2
 
-        des_A4_x_whole = math.floor(des_A4_x)
-        des_A4_y_whole = math.floor(des_A4_y)
+        # amount of full pages (where image is drawn from border to border)
+        des_A4_x_whole = int(math.floor(des_A4_x))
+        des_A4_y_whole = int(math.floor(des_A4_y))
 
-        des_A4_x_rem = des_A4_x - des_A4_x_whole
-        des_A4_y_rem = des_A4_y - des_A4_y_whole
+        # amount of pages that are necessary in x/y direction
+        des_A4_x_all = int(math.ceil(des_A4_x))
+        des_A4_y_all = int(math.ceil(des_A4_y))
 
         margin_x_px = margin_fac_x * A4_rect_x_px
         margin_y_px = margin_fac_y * A4_rect_y_px
 
+        # the amount of pixels that the A4 without border takes on the graphicsview
         A4_body_x_px = int(A4_rect_x_px - 2 * margin_x_px)
         A4_body_y_px = int(A4_rect_y_px - 2 * margin_y_px)
 
+        # the partial borders of the A4
         A4_rem_x_px = (des_A4_x - des_A4_x_whole) * A4_body_x_px
         A4_rem_y_px = (des_A4_y - des_A4_y_whole) * A4_rect_y_px
 
+        # the full image segments
         im_seg_x_px = im_x_px / des_A4_x
         im_seg_y_px = im_y_px / des_A4_y
 
+        # the partial image segments
         im_rem_x_px = im_x_px - des_A4_x_whole * im_seg_x_px
         im_rem_y_px = im_y_px - des_A4_y_whole * im_seg_y_px
 
+        # draw all the full image segment
         for x in range(des_A4_x_whole):
             for y in range(des_A4_y_whole):
                 x_left_px = dx + x * A4_rect_x_px + margin_x_px
                 y_top_px = dy + y * A4_rect_y_px + margin_y_px
 
                 pos_TL = QPointF(x_left_px, y_top_px)
-
-
-
-                scene_dest = QPointF(x_left_px, y_top_px)
 
                 TL = QPoint(x * im_seg_x_px, y * im_seg_y_px)
                 BR = QPoint((x + 1) * im_seg_x_px, (y + 1) * im_seg_y_px)
@@ -347,14 +360,9 @@ class graphicsPDF(graphicsHelper):
 
                 current_page = self.graphics.addPixmap(image_sized)
                 current_page.setOffset(pos_TL)
-                self.paper_list.append(current_page)
+                self.graphic_list.append(current_page)
 
-                page_TL = QPointF(x_left_px - margin_x_px, y_top_px - margin_y_px)
-                page_BR = QPointF(x_left_px + A4_body_x_px + margin_x_px, y_top_px + A4_body_y_px + margin_y_px)
-
-                page = self.graphics.addRect(QRectF(page_TL, page_BR))
-                self.paper_list.append(page)
-
+        # draw all the partial segments on the right side
         if im_rem_x_px != 0:
             for y in range(des_A4_y_whole):
                 x_left_px = dx + des_A4_x_whole * A4_rect_x_px + margin_x_px
@@ -362,8 +370,6 @@ class graphicsPDF(graphicsHelper):
                 y_top_px = dy + y * A4_rect_y_px + margin_y_px
 
                 pos_TL = QPointF(x_left_px, y_top_px)
-
-                scene_dest = QPointF(x_left_px, y_top_px)
 
                 TL = QPoint(des_A4_x_whole * im_seg_x_px, y * im_seg_y_px)
                 BR = QPoint(des_A4_x_whole * im_seg_x_px + im_rem_x_px, (y + 1) * im_seg_y_px)
@@ -377,14 +383,9 @@ class graphicsPDF(graphicsHelper):
 
                 current_page = self.graphics.addPixmap(image_sized)
                 current_page.setOffset(pos_TL)
-                self.paper_list.append(current_page)
+                self.graphic_list.append(current_page)
 
-                page_TL = QPointF(x_left_px - margin_x_px, y_top_px - margin_y_px)
-                page_BR = QPointF(x_left_px + A4_body_x_px + margin_x_px, y_top_px + A4_body_y_px + margin_y_px)
-
-                page = self.graphics.addRect(QRectF(page_TL, page_BR))
-                self.paper_list.append(page)
-
+        # draw all the parial segments on the left side
         if im_rem_y_px != 0:
             for x in range(des_A4_x_whole):
                 x_left_px = dx + x * A4_rect_x_px + margin_x_px
@@ -392,8 +393,6 @@ class graphicsPDF(graphicsHelper):
                 y_top_px = dy + des_A4_y_whole * A4_rect_y_px + margin_y_px
 
                 pos_TL = QPointF(x_left_px, y_top_px)
-
-                scene_dest = QPointF(x_left_px, y_top_px)
 
                 TL = QPoint(x * im_seg_x_px, des_A4_y_whole * im_seg_y_px)
                 BR = QPoint((x + 1) * im_seg_x_px, des_A4_y_whole * im_seg_y_px + im_rem_y_px)
@@ -407,22 +406,15 @@ class graphicsPDF(graphicsHelper):
 
                 current_page = self.graphics.addPixmap(image_sized)
                 current_page.setOffset(pos_TL)
-                self.paper_list.append(current_page)
+                self.graphic_list.append(current_page)
 
-                page_TL = QPointF(x_left_px - margin_x_px, y_top_px - margin_y_px)
-                page_BR = QPointF(x_left_px + A4_body_x_px + margin_x_px, y_top_px + A4_body_y_px + margin_y_px)
-
-                page = self.graphics.addRect(QRectF(page_TL, page_BR))
-                self.paper_list.append(page)
-
+        # drew the corner consisting of the two partial segments
         if im_rem_y_px != 0 and im_rem_x_px != 0:
             x_left_px = dx + des_A4_x_whole * A4_rect_x_px + margin_x_px
 
             y_top_px = dy + des_A4_y_whole * A4_rect_y_px + margin_y_px
 
             pos_TL = QPointF(x_left_px, y_top_px)
-
-            scene_dest = QPointF(x_left_px, y_top_px)
 
             TL = QPoint(des_A4_x_whole * im_seg_x_px, des_A4_y_whole * im_seg_y_px)
             BR = QPoint(des_A4_x_whole * im_seg_x_px + im_rem_x_px, des_A4_y_whole * im_seg_y_px + im_rem_y_px)
@@ -436,14 +428,27 @@ class graphicsPDF(graphicsHelper):
 
             current_page = self.graphics.addPixmap(image_sized)
             current_page.setOffset(pos_TL)
-            self.paper_list.append(current_page)
+            self.graphic_list.append(current_page)
 
-            page_TL = QPointF(x_left_px - margin_x_px, y_top_px - margin_y_px)
-            page_BR = QPointF(x_left_px + A4_body_x_px + margin_x_px, y_top_px + A4_body_y_px + margin_y_px)
+        # draw lines in the y direction to simulate the pages
+        for x in range(des_A4_x_all + 1):
+            x_co = dx + x * A4_rect_x_px
+            y_start = dy
+            y_stop = y_start + des_A4_y_all * A4_rect_y_px
+            line_start = QPointF(x_co, y_start)
+            line_stop = QPointF(x_co, y_stop)
 
-            page = self.graphics.addRect(QRectF(page_TL, page_BR))
-            self.paper_list.append(page)
+            self.graphic_list.append(self.graphics.addLine(QLineF(line_start, line_stop)))
 
+        # draw lines in the x direction to simulate the pages
+        for y in range(des_A4_y_all + 1):
+            y_co = dy + y * A4_rect_y_px
+            x_start = dx
+            x_stop = x_start + des_A4_x_all * A4_rect_x_px
+            line_start = QPointF(x_start, y_co)
+            line_stop = QPointF(x_stop, y_co)
+
+            self.graphic_list.append(self.graphics.addLine(QLineF(line_start, line_stop)))
 
 
 
