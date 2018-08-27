@@ -1,7 +1,6 @@
 from PyQt5.QtGui import QImage, QPixmap, QColor, QPen, QBrush, QPainter, QIcon
 from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF, QSize, QLine
 from PyQt5.QtWidgets import QGraphicsScene
-from PyQt5.QtSvg import QSvgRenderer
 import xml.etree.ElementTree
 import os
 import math
@@ -41,7 +40,7 @@ class graphicsHelper:
         self.widget_x_px = None
         self.widget_y_px = None
 
-        self.svg_des_width = 10000
+        self.svg_des_width = 2000
 
         self.draw_margin_px = 10
         self.dx = self.draw_margin_px / 2
@@ -156,21 +155,13 @@ class graphicsHelper:
     def set_image(self, location):
         filename, file_extension = os.path.splitext(location)
         if file_extension == ".svg":
-            e = xml.etree.ElementTree.parse('C:/users/Gilles/Documents/svg_exporter.svg').getroot()
+            e = xml.etree.ElementTree.parse(location).getroot()
             width = int(e.get('width'))
             height = int(e.get('height'))
 
             des_mul = math.ceil(self.svg_des_width / width)
-            renderer = QSvgRenderer(location)
             size = QSize(des_mul * width, des_mul * height)
             self.original_pix = QIcon(location).pixmap(size)
-            # image = QImage(des_mul * width, des_mul * height, QImage.Format_RGB32)
-            # painter = QPainter(image)
-            # renderer.render(painter)
-            # image.save("test.png")
-            # self.original_pix = QPixmap(image)
-            # painter.end()
-            print(e.get('width'))
         else:
             self.original_pix = QPixmap(QImage(location))
         self.update_image_info()

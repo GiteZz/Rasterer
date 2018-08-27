@@ -1,14 +1,15 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform, QBrush
-from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF
+from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform, QBrush, QIcon
+from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF, QSize
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog
 from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtSvg import QSvgRenderer
+import xml.etree.ElementTree
 from ui import Ui_MainWindow
 import math
 import logging
 from graphics_classes import graphicsCrop, graphicsPDF
+import os
 
 image_location = "C:/Users/Gilles/Pictures/TestImages/falcon9morning.jpg"
 
@@ -204,12 +205,15 @@ class MyUI(QtWidgets.QMainWindow):
     def resizeEvent(self, *args, **kwargs):
         super().resizeEvent(*args, **kwargs)
         print("resize event")
+        self.handle_resizing()
+
+    def handle_resizing(self):
         for tab in self.graphic_tabs:
             tab.update()
 
     def set_image(self, location):
         print("setting image from: ", location)
-
+        self.image_location = location
         for tab in self.graphic_tabs:
             tab.set_image(location)
 
@@ -217,7 +221,18 @@ class MyUI(QtWidgets.QMainWindow):
         # TODO set maximum for spinboxes
 
     def get_cropped_image(self):
-        image_non_cropped = QImage(self.image_location)
+        filename, file_extension = os.path.splitext(self.image_location)
+        if file_extension == ".svg":
+            e = xml.etree.ElementTree.parse(self.image_location).getroot()
+            width = int(e.get('width'))
+            height = int(e.get('height'))
+            des_width = 10000
+            des_mul = math.ceil(des_width / width)
+            size = QSize(des_mul * width, des_mul * height)
+            image_non_cropped = QIcon(self.image_location).pixmap(size).toImage()
+        else:
+            image_non_cropped = QImage(self.image_location)
+
         im_size = image_non_cropped.size()
         crop_left_px, crop_right_px, crop_top_px, crop_bottom_px = self.get_crop_values()
 
@@ -367,7 +382,7 @@ def createPDF(marking, image, amount_x, amount_y, av_x_px, av_y_px, printer, pai
     pdf_rest_y_px = (amount_y - amount_whole_y) * pdf_y_px
 
     margin_x_px = (pdf_x_px - av_x_px) / 2
-    margin_y_px = (pdf_y_px - av_y_px) /2
+    margin_y_px = (pdf_y_px - av_y_px) / 2
 
     # print the parts of the image that take up a whole page
     for x in range(amount_whole_x):
@@ -439,6 +454,7 @@ def createPDF(marking, image, amount_x, amount_y, av_x_px, av_y_px, printer, pai
 
         mark_function(target_top_left, target_bottom_right, margin_x_px, margin_y_px, pdf_x_px, pdf_y_px, painter)
 
+    print("pdf created")
 
 
 if __name__ == "__main__":
@@ -455,4 +471,5 @@ if __name__ == "__main__":
     MainWindow.set_image("C:/Users/Gilles/Documents/svg_exporter.svg")
 
     MainWindow.show()
+    MainWindow.handle_resizing()
     sys.exit(app.exec_())
