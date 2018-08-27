@@ -1,10 +1,13 @@
-from PyQt5.QtGui import QImage, QPixmap, QColor, QPen, QBrush
-from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF, QSize
+from PyQt5.QtGui import QImage, QPixmap, QColor, QPen, QBrush, QPainter, QIcon
+from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF, QSize, QLine
 from PyQt5.QtWidgets import QGraphicsScene
+from PyQt5.QtSvg import QSvgRenderer
+import xml.etree.ElementTree
+import os
 import math
 
 class graphicsHelper:
-    def __init__(self, widget, pixmap=None, crop_image=True, show_image=True):
+    def __init__(self, widget, pixmap=None, crop_image=True, show_image=True, show_border=True):
         self.original_pix = pixmap
         self.scaled_pix = pixmap
         self.cropped_pix = pixmap
@@ -34,12 +37,38 @@ class graphicsHelper:
         else:
             self.graphics_pixmap = None
 
+        self.widget_size = None
+        self.widget_x_px = None
+        self.widget_y_px = None
+
+        self.svg_des_width = 10000
+
+        self.draw_margin_px = 10
+        self.dx = self.draw_margin_px / 2
+        self.dy = self.draw_margin_px / 2
+
+        TL = QPointF(0,0)
+        BR = QPointF(0,0)
+
+        self.graphics_line_image_top = self.graphics.addLine(QLineF(TL, BR))
+        self.graphics_line_image_bottom = self.graphics.addLine(QLineF(TL, BR))
+        self.graphics_line_image_left = self.graphics.addLine(QLineF(TL, BR))
+        self.graphics_line_image_right = self.graphics.addLine(QLineF(TL, BR))
+
+        self.graphics_line_image_top.setVisible(False)
+        self.graphics_line_image_bottom.setVisible(False)
+        self.graphics_line_image_left.setVisible(False)
+        self.graphics_line_image_right.setVisible(False)
+
+        self.show_border = show_border
         self.update()
 
     def update(self):
         self.widget_size = self.widget.size()
-        self.widget_x_px = self.widget_size.width()
-        self.widget_y_px = self.widget_size.height()
+        self.widget_size.setWidth(self.widget_size.width() - self.draw_margin_px)
+        self.widget_size.setHeight(self.widget_size.height() - self.draw_margin_px)
+        self.widget_x_px = self.widget_size.width() - self.draw_margin_px
+        self.widget_y_px = self.widget_size.height() - self.draw_margin_px
 
         if self.original_pix is not None:
             self.update_image_info()
@@ -93,11 +122,57 @@ class graphicsHelper:
             self.graphics_pixmap = self.graphics.addPixmap(self.scaled_pix)
             self.graphics_pixmap.setZValue(-1)
 
+        if self.show_border:
+            self.graphics_line_image_bottom.setVisible(True)
+            self.graphics_line_image_top.setVisible(True)
+            self.graphics_line_image_left.setVisible(True)
+            self.graphics_line_image_right.setVisible(True)
+
+            loc_y_top_px = self.offset_y_px
+            loc_y_bottom_px = self.widget_y_px - self.offset_y_px
+
+            loc_x_left_px = self.offset_x_px
+            loc_x_right_px = self.widget_x_px - self.offset_x_px
+
+            TL = QPointF(loc_x_left_px, loc_y_top_px)
+            TR = QPointF(loc_x_right_px, loc_y_top_px)
+            BL = QPointF(loc_x_left_px, loc_y_bottom_px)
+            BR = QPointF(loc_x_right_px, loc_y_bottom_px)
+
+            line_top = QLineF(TL, TR)
+            line_bottom = QLineF(BL, BR)
+            line_left = QLineF(TL, BL)
+            line_right = QLineF(TR, BR)
+
+            self.graphics_line_image_top.setLine(line_top)
+            self.graphics_line_image_bottom.setLine(line_bottom)
+            self.graphics_line_image_left.setLine(line_left)
+            self.graphics_line_image_right.setLine(line_right)
+
+
         self.graphics_pixmap.setOffset(QPointF(self.offset_x_px, self.offset_y_px))
         self.graphics_pixmap.setVisible(self.show_image)
 
     def set_image(self, location):
-        self.original_pix = QPixmap(QImage(location))
+        filename, file_extension = os.path.splitext(location)
+        if file_extension == ".svg":
+            e = xml.etree.ElementTree.parse('C:/users/Gilles/Documents/svg_exporter.svg').getroot()
+            width = int(e.get('width'))
+            height = int(e.get('height'))
+
+            des_mul = math.ceil(self.svg_des_width / width)
+            renderer = QSvgRenderer(location)
+            size = QSize(des_mul * width, des_mul * height)
+            self.original_pix = QIcon(location).pixmap(size)
+            # image = QImage(des_mul * width, des_mul * height, QImage.Format_RGB32)
+            # painter = QPainter(image)
+            # renderer.render(painter)
+            # image.save("test.png")
+            # self.original_pix = QPixmap(image)
+            # painter.end()
+            print(e.get('width'))
+        else:
+            self.original_pix = QPixmap(QImage(location))
         self.update_image_info()
 
     def update_tab_function(self):
@@ -234,7 +309,7 @@ class graphicsCrop(graphicsHelper):
 
 class graphicsPDF(graphicsHelper):
     def __init__(self, widget, pixmap=None):
-        super().__init__(widget, pixmap=pixmap, crop_image=False, show_image=False)
+        super().__init__(widget, pixmap=pixmap, crop_image=False, show_image=False, show_border=False)
         self.A4_x_mm = 210
         self.A4_y_mm = 297
 
@@ -304,14 +379,14 @@ class graphicsPDF(graphicsHelper):
             # height is limiting factor
             A4_rect_y_px = self.widget_y_px / math.ceil(des_A4_y)
             A4_rect_x_px = A4_rect_y_px * A4_ratio
-            dy = 0
-            dx = (self.widget_x_px - math.ceil(des_A4_x) * A4_rect_x_px) / 2
+            dy = self.dy
+            dx = (self.widget_x_px - math.ceil(des_A4_x) * A4_rect_x_px) / 2 + self.dx
         else:
             # width is limiting factor
             A4_rect_x_px = self.widget_x_px / math.ceil(des_A4_x)
             A4_rect_y_px = A4_rect_x_px * (1 / A4_ratio)
-            dx = 0
-            dy = (self.widget_y_px - math.ceil(des_A4_y) * A4_rect_y_px) / 2
+            dx = self.dx
+            dy = (self.widget_y_px - math.ceil(des_A4_y) * A4_rect_y_px) / 2 + self.dy
 
         # amount of full pages (where image is drawn from border to border)
         des_A4_x_whole = int(math.floor(des_A4_x))

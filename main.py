@@ -4,6 +4,7 @@ from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform, QBr
 from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog
 from PyQt5.QtPrintSupport import QPrinter
+from PyQt5.QtSvg import QSvgRenderer
 from ui import Ui_MainWindow
 import math
 import logging
@@ -69,7 +70,7 @@ class MyUI(QtWidgets.QMainWindow):
 
     def new_file(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file',
-                                            'c:\\', "Image files (*.jpg *.png)")
+                                            'c:\\', "Image files (*.jpg *.png *svg)")
         if fname[0] != "":
             self.set_image(fname[0])
 
@@ -134,7 +135,6 @@ class MyUI(QtWidgets.QMainWindow):
 
     def get_crop_value_left(self):
         image_size = self.graphic_tabs[0].original_pix.size()
-        # TODO maybe replace with dict, but tabs are in order so maybe not
 
         if self.widgets.cropLeftType.currentText() == "px":
             crop_left_px = self.widgets.spinBoxCropLeft.value()
@@ -173,7 +173,6 @@ class MyUI(QtWidgets.QMainWindow):
 
         return crop_bottom_px
 
-
     def get_crop_values(self, scale_factor_x=1, scale_factor_y=1):
         """ gives crop values in px based op current_pixmap"""
 
@@ -184,7 +183,6 @@ class MyUI(QtWidgets.QMainWindow):
         ret_bottom = int(scale_factor_y * self.get_crop_value_bottom())
 
         return ret_left, ret_right, ret_top, ret_bottom
-
 
     def changeCrop(self):
         print("crop changed")
@@ -454,7 +452,7 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.confirmUI(ui)
     #MainWindow.set_image(image_location)
-    MainWindow.set_image("C:/Users/Gilles/Downloads/100_0045_20180806182421.jpg")
+    MainWindow.set_image("C:/Users/Gilles/Documents/svg_exporter.svg")
 
     MainWindow.show()
     sys.exit(app.exec_())
