@@ -230,11 +230,14 @@ class MyUI(QtWidgets.QMainWindow):
             des_mul = math.ceil(des_width / width)
             size = QSize(des_mul * width, des_mul * height)
             image_non_cropped = QIcon(self.image_location).pixmap(size).toImage()
+            #original is displayed with 2000 width for speed
+            scale_factor = 5
         else:
             image_non_cropped = QImage(self.image_location)
+            scale_factor = 1
 
         im_size = image_non_cropped.size()
-        crop_left_px, crop_right_px, crop_top_px, crop_bottom_px = self.get_crop_values()
+        crop_left_px, crop_right_px, crop_top_px, crop_bottom_px = self.get_crop_values(scale_factor_x=scale_factor, scale_factor_y=scale_factor)
 
         crop_top_left = QPoint(crop_left_px, crop_top_px)
         crop_bottom_right = QPoint(im_size.width() - crop_right_px, im_size.height() - crop_bottom_px)
