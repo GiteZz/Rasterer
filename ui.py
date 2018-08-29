@@ -249,7 +249,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Rasterer"))
         self.pushButtonChooseImage.setText(_translate("MainWindow", "Choose image"))
         self.label_5.setText(_translate("MainWindow", "Crop settings:"))
         self.checkBoxLockLR.setText(_translate("MainWindow", "Lock left/right"))

@@ -78,8 +78,11 @@ class MyUI(QtWidgets.QMainWindow):
     def pdf_button(self):
         """ Create the rasterized pdf """
 
+        save_name = QFileDialog.getSaveFileName(self, 'Save File', 'c:\\', "PDF (*.pdf)")
+        if save_name == '':
+            pass
         printer = QPrinter(mode=QPrinter.HighResolution)
-        printer.setOutputFileName("hello.pdf")
+        printer.setOutputFileName(save_name[0])
         printer.setOutputFormat(QPrinter.PdfFormat)
         printer.setFullPage(True)
         printer.setPaperSize(QPrinter.A4)
@@ -472,6 +475,7 @@ if __name__ == "__main__":
     MainWindow.confirmUI(ui)
     #MainWindow.set_image(image_location)
     MainWindow.set_image("C:/Users/Gilles/Documents/svg_exporter.svg")
+    MainWindow.setWindowIcon(QIcon("icon.ico"))
 
     MainWindow.show()
     MainWindow.handle_resizing()
