@@ -46,8 +46,8 @@ class graphicsHelper:
         self.dx = self.draw_margin_px / 2
         self.dy = self.draw_margin_px / 2
 
-        TL = QPointF(0,0)
-        BR = QPointF(0,0)
+        TL = QPointF(0, 0)
+        BR = QPointF(0, 0)
 
         self.graphics_line_image_top = self.graphics.addLine(QLineF(TL, BR))
         self.graphics_line_image_bottom = self.graphics.addLine(QLineF(TL, BR))
@@ -168,6 +168,7 @@ class graphicsHelper:
 
     def update_tab_function(self):
         pass
+
 
 class graphicsCrop(graphicsHelper):
     def __init__(self, widget, pixmap=None):
@@ -297,6 +298,7 @@ class graphicsCrop(graphicsHelper):
         self.graphics_crop_line_dot_top.setLine(line_top)
         self.graphics_crop_line_dot_left.setLine(line_left)
         self.graphics_crop_line_dot_right.setLine(line_right)
+
 
 class graphicsPDF(graphicsHelper):
     def __init__(self, widget, pixmap=None):
