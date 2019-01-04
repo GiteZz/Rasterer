@@ -1,12 +1,9 @@
-import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform, QBrush, QIcon
 from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF, QSize
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog
 from PyQt5.QtPrintSupport import QPrinter
 import xml.etree.ElementTree
 import math
-import logging
 from graphics_classes import graphicsCrop, graphicsPDF
 import os
 from PDF_draw_functions import createPDF

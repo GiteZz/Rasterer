@@ -16,17 +16,17 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout_4">
     <item row="0" column="0">
-     <widget class="QTabWidget" name="MainTab">
+     <widget class="QTabWidget" name="Main_Tab">
       <property name="currentIndex">
        <number>1</number>
       </property>
-      <widget class="QWidget" name="RastererTab">
+      <widget class="QWidget" name="RAST_Tab">
        <attribute name="title">
         <string>Rasterer</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
-         <widget class="QTabWidget" name="tabWidget">
+         <widget class="QTabWidget" name="RAST_MainTab">
           <property name="minimumSize">
            <size>
             <width>1095</width>
@@ -34,15 +34,15 @@
            </size>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
-          <widget class="QWidget" name="tab">
+          <widget class="QWidget" name="RAST_ImSettingsTab">
            <attribute name="title">
             <string>Image settings</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_2">
             <item row="0" column="0">
-             <layout class="QHBoxLayout" name="horizontalLayout">
+             <layout class="QHBoxLayout" name="RAST_ImSettingsHLayout">
               <property name="sizeConstraint">
                <enum>QLayout::SetMaximumSize</enum>
               </property>
@@ -63,7 +63,7 @@
                </widget>
               </item>
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout">
+               <layout class="QVBoxLayout" name="RAST_ImSettingsVLayout">
                 <property name="sizeConstraint">
                  <enum>QLayout::SetMaximumSize</enum>
                 </property>
@@ -80,14 +80,14 @@
                  <number>20</number>
                 </property>
                 <item>
-                 <widget class="QPushButton" name="pushButtonChooseImage">
+                 <widget class="QPushButton" name="RAST_ChooseImageButton">
                   <property name="text">
                    <string>Choose image</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_5">
+                 <widget class="QLabel" name="RAST_SettingsLabel">
                   <property name="maximumSize">
                    <size>
                     <width>16777215</width>
@@ -100,14 +100,14 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBoxLockLR">
+                 <widget class="QCheckBox" name="RAST_CheckLR">
                   <property name="text">
                    <string>Lock left/right</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="combLineEditLabelCropLeft">
+                 <layout class="QHBoxLayout" name="RAST_CropLeftHLayou">
                   <property name="topMargin">
                    <number>0</number>
                   </property>
@@ -115,7 +115,7 @@
                    <number>0</number>
                   </property>
                   <item>
-                   <widget class="QLabel" name="cropLeftLabel">
+                   <widget class="QLabel" name="RAST_CropLLabel">
                     <property name="maximumSize">
                      <size>
                       <width>52</width>
@@ -128,7 +128,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBoxCropLeft">
+                   <widget class="QSpinBox" name="RAST_CropLSpinbox">
                     <property name="maximumSize">
                      <size>
                       <width>80</width>
@@ -141,7 +141,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="cropLeftType">
+                   <widget class="QComboBox" name="RAST_CropLType">
                     <property name="maximumSize">
                      <size>
                       <width>40</width>
@@ -163,9 +163,9 @@
                  </layout>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="combLineEditLabelCropRight">
+                 <layout class="QHBoxLayout" name="RAST_CropRightHLayout">
                   <item>
-                   <widget class="QLabel" name="cropRightLabel">
+                   <widget class="QLabel" name="RAST_CropRLabel">
                     <property name="maximumSize">
                      <size>
                       <width>52</width>
@@ -178,7 +178,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBoxCropRight">
+                   <widget class="QSpinBox" name="RAST_CropRSpinbox">
                     <property name="maximumSize">
                      <size>
                       <width>80</width>
@@ -191,7 +191,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="cropRightType">
+                   <widget class="QComboBox" name="RAST_CropRType">
                     <property name="maximumSize">
                      <size>
                       <width>40</width>
@@ -213,16 +213,16 @@
                  </layout>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="checkBoxLockTB">
+                 <widget class="QCheckBox" name="RAST_CheckTB">
                   <property name="text">
                    <string>Lock top/bottom</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="combLineEditLabelCropTop">
+                 <layout class="QHBoxLayout" name="RAST_CropTopLayout">
                   <item>
-                   <widget class="QLabel" name="cropTopLabel">
+                   <widget class="QLabel" name="RAST_CropTLabel">
                     <property name="maximumSize">
                      <size>
                       <width>52</width>
@@ -235,7 +235,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBoxCropTop">
+                   <widget class="QSpinBox" name="RAST_CropTSpinbox">
                     <property name="maximumSize">
                      <size>
                       <width>80</width>
@@ -248,7 +248,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="cropTopType">
+                   <widget class="QComboBox" name="RAST_CropTType">
                     <property name="maximumSize">
                      <size>
                       <width>40</width>
@@ -270,9 +270,9 @@
                  </layout>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="combLineEditLabelCropBottom">
+                 <layout class="QHBoxLayout" name="RAST_CropBottomLayout">
                   <item>
-                   <widget class="QLabel" name="cropBottomLabel">
+                   <widget class="QLabel" name="RAST_CropBLabel">
                     <property name="maximumSize">
                      <size>
                       <width>52</width>
@@ -285,7 +285,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBoxCropBottom">
+                   <widget class="QSpinBox" name="RAST_CropBSpinbox">
                     <property name="maximumSize">
                      <size>
                       <width>80</width>
@@ -298,7 +298,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="cropBottomType">
+                   <widget class="QComboBox" name="RAST_CropBType">
                     <property name="maximumSize">
                      <size>
                       <width>40</width>
@@ -320,7 +320,7 @@
                  </layout>
                 </item>
                 <item>
-                 <spacer name="verticalSpacer">
+                 <spacer name="RAST_SettingsVSpacer">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
                   </property>
@@ -335,7 +335,7 @@
                </layout>
               </item>
               <item>
-               <widget class="QGraphicsView" name="graphicsViewFullImage">
+               <widget class="QGraphicsView" name="RAST_CropView">
                 <property name="frameShape">
                  <enum>QFrame::NoFrame</enum>
                 </property>
@@ -354,36 +354,36 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_2">
+          <widget class="QWidget" name="RAST_pdfTab">
            <attribute name="title">
             <string>PDF settings</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_3">
             <item row="0" column="0">
-             <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <layout class="QHBoxLayout" name="RAST_pdfHLayout">
               <item>
-               <layout class="QVBoxLayout" name="verticalLayout_3">
+               <layout class="QVBoxLayout" name="RAST_pdfSettingsVLayout">
                 <property name="bottomMargin">
                  <number>5</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="Rast_label_1">
+                 <widget class="QLabel" name="RAST_pdfSettingsLabel">
                   <property name="text">
                    <string>Rasterizer settings:</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_5">
+                 <layout class="QHBoxLayout" name="RAST_DesSizeHLayout">
                   <item>
-                   <widget class="QLabel" name="label_3">
+                   <widget class="QLabel" name="RAST_DesSizeLabel">
                     <property name="text">
                      <string>Desired size (mm)</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBoxDesiredSize">
+                   <widget class="QSpinBox" name="RAST_DesSizeSpinbox">
                     <property name="maximum">
                      <number>99999999</number>
                     </property>
@@ -393,7 +393,7 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="comboBoxDesiredAxis">
+                   <widget class="QComboBox" name="RAST_DesAxisCombobox">
                     <property name="maximumSize">
                      <size>
                       <width>50</width>
@@ -415,16 +415,16 @@
                  </layout>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <layout class="QHBoxLayout" name="RAST_MarginXHLayout">
                   <item>
-                   <widget class="QLabel" name="label">
+                   <widget class="QLabel" name="RAST_MarginXLabel">
                     <property name="text">
                      <string>Margin x (mm)</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBoxPDFMarginX">
+                   <widget class="QSpinBox" name="RAST_MarginXSpinbox">
                     <property name="value">
                      <number>5</number>
                     </property>
@@ -433,16 +433,16 @@
                  </layout>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_9">
+                 <layout class="QHBoxLayout" name="RAST_Margin_YHLayout">
                   <item>
-                   <widget class="QLabel" name="label_9">
+                   <widget class="QLabel" name="RAST_MarginYLabel">
                     <property name="text">
                      <string>Margin y (mm)</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QSpinBox" name="spinBoxPDFMarginY">
+                   <widget class="QSpinBox" name="RAST_MarginYSpinbox">
                     <property name="value">
                      <number>5</number>
                     </property>
@@ -451,16 +451,16 @@
                  </layout>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_6">
+                 <layout class="QHBoxLayout" name="RAST_MarkingLabel">
                   <item>
-                   <widget class="QLabel" name="label_4">
+                   <widget class="QLabel" name="RAST_MarkingLabel_2">
                     <property name="text">
-                     <string>TextLabel</string>
+                     <string>Corner marking</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="comboBoxMarking">
+                   <widget class="QComboBox" name="RAST_MarkingCombobox">
                     <item>
                      <property name="text">
                       <string>Half cross</string>
@@ -486,16 +486,16 @@
                  </layout>
                 </item>
                 <item>
-                 <layout class="QHBoxLayout" name="horizontalLayout_4">
+                 <layout class="QHBoxLayout" name="RAST_LayoutHLayout">
                   <item>
-                   <widget class="QLabel" name="label_2">
+                   <widget class="QLabel" name="RAST_LayoutLabel">
                     <property name="text">
                      <string>Page layout</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="comboBoxPageRotation">
+                   <widget class="QComboBox" name="RAST_LayoutCombobox">
                     <item>
                      <property name="text">
                       <string>vertical</string>
@@ -511,14 +511,14 @@
                  </layout>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonCreatePDF">
+                 <widget class="QPushButton" name="RAST_CreatepdfButton">
                   <property name="text">
                    <string>Create PDF</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="verticalSpacer_2">
+                 <spacer name="RAST_pdfVSpace">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
                   </property>
@@ -533,7 +533,7 @@
                </layout>
               </item>
               <item>
-               <widget class="QGraphicsView" name="graphicsViewPDFImage">
+               <widget class="QGraphicsView" name="RAST_pdfView">
                 <property name="frameShape">
                  <enum>QFrame::NoFrame</enum>
                 </property>
@@ -556,7 +556,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_4">
+      <widget class="QWidget" name="SPLIT_Tab">
        <attribute name="title">
         <string>SplitPDF</string>
        </attribute>
@@ -574,7 +574,7 @@
           <enum>QLayout::SetMaximumSize</enum>
          </property>
          <item row="0" column="0">
-          <widget class="QGraphicsView" name="graphicsView"/>
+          <widget class="QGraphicsView" name="SPLIT_CurrentPageView"/>
          </item>
          <item row="0" column="1">
           <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -582,7 +582,7 @@
             <layout class="QVBoxLayout" name="verticalLayout_4"/>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QPushButton" name="SPLIT_CreateButton">
              <property name="text">
               <string>PushButton</string>
              </property>
