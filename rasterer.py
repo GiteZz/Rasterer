@@ -1,5 +1,5 @@
-from PyQt5.QtGui import QImage, QPixmap, QColor, QPainter, QPen, QTransform, QBrush, QIcon
-from PyQt5.QtCore import QPoint, QRect, QPointF, QRectF, QLineF, QSize
+from PyQt5.QtGui import QImage, QPainter, QTransform, QIcon
+from PyQt5.QtCore import QPoint, QRect, QSize
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog
 from PyQt5.QtPrintSupport import QPrinter
 import xml.etree.ElementTree
@@ -33,38 +33,38 @@ class Rasterer:
     def confirm_UI(self, widgets):
         self.widgets = widgets
 
-        self.widgets.spinBoxCropTop.valueChanged.connect(self.changeCropTop)
-        self.widgets.spinBoxCropBottom.valueChanged.connect(self.changeCropBottom)
-        self.widgets.spinBoxCropLeft.valueChanged.connect(self.changeCropLeft)
-        self.widgets.spinBoxCropRight.valueChanged.connect(self.changeCropRight)
+        self.widgets.RAST_CropTSpinbox.valueChanged.connect(self.changeCropTop)
+        self.widgets.RAST_CropBSpinbox.valueChanged.connect(self.changeCropBottom)
+        self.widgets.RAST_CropLSpinbox.valueChanged.connect(self.changeCropLeft)
+        self.widgets.RAST_CropRSpinbox.valueChanged.connect(self.changeCropRight)
 
-        self.widgets.cropLeftType.currentIndexChanged.connect(self.changeCropLeft)
-        self.widgets.cropRightType.currentIndexChanged.connect(self.changeCropRight)
-        self.widgets.cropTopType.currentIndexChanged.connect(self.changeCropTop)
-        self.widgets.cropBottomType.currentIndexChanged.connect(self.changeCropBottom)
+        self.widgets.RAST_CropLType.currentIndexChanged.connect(self.changeCropLeft)
+        self.widgets.RAST_CropRType.currentIndexChanged.connect(self.changeCropRight)
+        self.widgets.RAST_CropTType.currentIndexChanged.connect(self.changeCropTop)
+        self.widgets.RAST_CropBType.currentIndexChanged.connect(self.changeCropBottom)
 
-        self.widgets.pushButtonChooseImage.clicked.connect(self.new_file)
+        self.widgets.RAST_ChooseImageButton.clicked.connect(self.new_file)
 
         self.widgets.centralWidget.layout().setContentsMargins(0,0,0,0)
 
-        self.widgets.checkBoxLockLR.stateChanged.connect(self.lockCheckBoxChanged)
-        self.widgets.checkBoxLockTB.stateChanged.connect(self.lockCheckBoxChanged)
+        self.widgets.RAST_CheckLR.stateChanged.connect(self.lockCheckBoxChanged)
+        self.widgets.RAST_CheckTB.stateChanged.connect(self.lockCheckBoxChanged)
 
-        self.widgets.pushButtonCreatePDF.clicked.connect(self.pdf_button)
+        self.widgets.RAST_CreatepdfButton.clicked.connect(self.pdf_button)
 
-        self.widgets.graphicsViewFullImage.setScene(self.graphics)
+        self.widgets.RAST_CropView.setScene(self.graphics)
 
-        self.graphic_tabs.append(graphicsCrop(self.widgets.graphicsViewFullImage))
-        self.graphic_tabs.append(graphicsPDF(self.widgets.graphicsViewPDFImage))
+        self.graphic_tabs.append(graphicsCrop(self.widgets.RAST_CropView))
+        self.graphic_tabs.append(graphicsPDF(self.widgets.RAST_pdfView))
         self.pdf_values_change()
 
-        self.widgets.tabWidget.currentChanged.connect(self.tab_changed)
+        self.widgets.RAST_MainTab.currentChanged.connect(self.tab_changed)
 
-        self.widgets.spinBoxDesiredSize.valueChanged.connect(self.pdf_values_change)
-        self.widgets.spinBoxPDFMarginX.valueChanged.connect(self.pdf_values_change)
-        self.widgets.spinBoxPDFMarginY.valueChanged.connect(self.pdf_values_change)
-        self.widgets.comboBoxPageRotation.currentIndexChanged.connect(self.pdf_values_change)
-        self.widgets.comboBoxDesiredAxis.currentIndexChanged.connect(self.pdf_values_change)
+        self.widgets.RAST_DesSizeSpinbox.valueChanged.connect(self.pdf_values_change)
+        self.widgets.RAST_MarginXSpinbox.valueChanged.connect(self.pdf_values_change)
+        self.widgets.RAST_MarginYSpinbox.valueChanged.connect(self.pdf_values_change)
+        self.widgets.RAST_LayoutCombobox.currentIndexChanged.connect(self.pdf_values_change)
+        self.widgets.RAST_DesAxisCombobox.currentIndexChanged.connect(self.pdf_values_change)
 
     def new_file(self):
         fname = QFileDialog.getOpenFileName(self.parent, 'Open file',
@@ -92,7 +92,7 @@ class Rasterer:
 
         pdf_values = self.getPDF_values(pdf_x_px, pdf_y_px)
 
-        createPDF(self.widgets.comboBoxMarking.currentText(), *pdf_values, printer, painter)
+        createPDF(self.widgets.RAST_MarkingCombobox.currentText(), *pdf_values, printer, painter)
 
         painter.end()
 
@@ -102,76 +102,76 @@ class Rasterer:
             tab.update()
 
     def lockCheckBoxChanged(self):
-        self.lock_crop_TB = self.widgets.checkBoxLockTB.isChecked()
-        self.lock_crop_LR = self.widgets.checkBoxLockLR.isChecked()
+        self.lock_crop_TB = self.widgets.RAST_CheckTB.isChecked()
+        self.lock_crop_LR = self.widgets.RAST_CheckLR.isChecked()
 
 
     def changeCropLeft(self):
-        """ event when self.widgets.spinBoxCropLeft changes value, individual events in order the enable locking"""
+        """ event when self.widgets.RAST_CropLSpinbox changes value, individual events in order the enable locking"""
         if self.lock_crop_LR:
-            self.widgets.spinBoxCropRight.setValue(self.widgets.spinBoxCropLeft.value())
-            self.widgets.cropRightType.setCurrentIndex(self.widgets.cropLeftType.currentIndex())
+            self.widgets.RAST_CropRSpinbox.setValue(self.widgets.RAST_CropLSpinbox.value())
+            self.widgets.RAST_CropRType.setCurrentIndex(self.widgets.RAST_CropLType.currentIndex())
 
         self.changeCrop()
 
     def changeCropRight(self):
-        """ event when self.widgets.spinBoxCropRight changes value, individual events in order the enable locking"""
+        """ event when self.widgets.RAST_CropRSpinbox changes value, individual events in order the enable locking"""
         if self.lock_crop_LR:
-            self.widgets.spinBoxCropLeft.setValue(self.widgets.spinBoxCropRight.value())
-            self.widgets.cropLeftType.setCurrentIndex(self.widgets.cropRightType.currentIndex())
+            self.widgets.RAST_CropLSpinbox.setValue(self.widgets.RAST_CropRSpinbox.value())
+            self.widgets.RAST_CropLType.setCurrentIndex(self.widgets.RAST_CropRType.currentIndex())
         self.changeCrop()
 
     def changeCropTop(self):
-        """ event when self.widgets.spinBoxCropTop changes value, individual events in order the enable locking"""
+        """ event when self.widgets.RAST_CropTSpinbox changes value, individual events in order the enable locking"""
         if self.lock_crop_TB:
-            self.widgets.spinBoxCropBottom.setValue(self.widgets.spinBoxCropTop.value())
-            self.widgets.cropBottomType.setCurrentIndex(self.widgets.cropTopType.currentIndex())
+            self.widgets.RAST_CropBSpinbox.setValue(self.widgets.RAST_CropTSpinbox.value())
+            self.widgets.RAST_CropBType.setCurrentIndex(self.widgets.RAST_CropTType.currentIndex())
         self.changeCrop()
 
     def changeCropBottom(self):
-        """ event when self.widgets.spinBoxCropBottom changes value, individual events in order the enable locking"""
+        """ event when self.widgets.RAST_CropBSpinbox changes value, individual events in order the enable locking"""
         if self.lock_crop_TB:
-            self.widgets.spinBoxCropTop.setValue(self.widgets.spinBoxCropBottom.value())
-            self.widgets.cropTopType.setCurrentIndex(self.widgets.cropBottomType.currentIndex())
+            self.widgets.RAST_CropTSpinbox.setValue(self.widgets.RAST_CropBSpinbox.value())
+            self.widgets.RAST_CropTType.setCurrentIndex(self.widgets.RAST_CropBType.currentIndex())
         self.changeCrop()
 
     def get_crop_value_left(self):
         image_size = self.graphic_tabs[0].original_pix.size()
 
-        if self.widgets.cropLeftType.currentText() == "px":
-            crop_left_px = self.widgets.spinBoxCropLeft.value()
+        if self.widgets.RAST_CropLType.currentText() == "px":
+            crop_left_px = self.widgets.RAST_CropLSpinbox.value()
         else:
-            crop_left_px = int(self.widgets.spinBoxCropLeft.value() * 0.01 * image_size.width())
+            crop_left_px = int(self.widgets.RAST_CropLSpinbox.value() * 0.01 * image_size.width())
 
         return crop_left_px
 
     def get_crop_value_right(self):
         image_size = self.graphic_tabs[0].original_pix.size()
 
-        if self.widgets.cropRightType.currentText() == "px":
-            crop_right_px = self.widgets.spinBoxCropRight.value()
+        if self.widgets.RAST_CropRType.currentText() == "px":
+            crop_right_px = self.widgets.RAST_CropRSpinbox.value()
         else:
-            crop_right_px = int(self.widgets.spinBoxCropRight.value() * 0.01 * image_size.width())
+            crop_right_px = int(self.widgets.RAST_CropRSpinbox.value() * 0.01 * image_size.width())
 
         return crop_right_px
 
     def get_crop_value_top(self):
         image_size = self.graphic_tabs[0].original_pix.size()
 
-        if self.widgets.cropTopType.currentText() == "px":
-            crop_top_px = self.widgets.spinBoxCropTop.value()
+        if self.widgets.RAST_CropTType.currentText() == "px":
+            crop_top_px = self.widgets.RAST_CropTSpinbox.value()
         else:
-            crop_top_px = int(self.widgets.spinBoxCropTop.value() * 0.01 * image_size.height())
+            crop_top_px = int(self.widgets.RAST_CropTSpinbox.value() * 0.01 * image_size.height())
 
         return crop_top_px
 
     def get_crop_value_bottom(self):
         image_size = self.graphic_tabs[0].original_pix.size()
 
-        if self.widgets.cropBottomType.currentText() == "px":
-            crop_bottom_px = self.widgets.spinBoxCropBottom.value()
+        if self.widgets.RAST_CropBType.currentText() == "px":
+            crop_bottom_px = self.widgets.RAST_CropBSpinbox.value()
         else:
-            crop_bottom_px = int(self.widgets.spinBoxCropBottom.value() * 0.01 * image_size.height())
+            crop_bottom_px = int(self.widgets.RAST_CropBSpinbox.value() * 0.01 * image_size.height())
 
         return crop_bottom_px
 
@@ -194,11 +194,11 @@ class Rasterer:
 
     def pdf_values_change(self):
         # pdate_pdf_values(self, des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical)
-        des_size_mm = self.widgets.spinBoxDesiredSize.value()
-        width = self.widgets.comboBoxDesiredAxis.currentText() == "wide"
-        margin_x_mm = self.widgets.spinBoxPDFMarginX.value()
-        margin_y_mm = self.widgets.spinBoxPDFMarginY.value()
-        A4_vertical = self.widgets.comboBoxPageRotation.currentText() == "vertical"
+        des_size_mm = self.widgets.RAST_DesSizeSpinbox.value()
+        width = self.widgets.RAST_DesAxisCombobox.currentText() == "wide"
+        margin_x_mm = self.widgets.RAST_MarginXSpinbox.value()
+        margin_y_mm = self.widgets.RAST_MarginYSpinbox.value()
+        A4_vertical = self.widgets.RAST_LayoutCombobox.currentText() == "vertical"
 
         self.graphic_tabs[1].set_pdf_values(des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical)
         print("pdf values changed")
@@ -243,11 +243,11 @@ class Rasterer:
     def getPDF_values(self, pdf_x_px, pdf_y_px):
         image_cropped = self.get_cropped_image()
 
-        margin_x_mm = self.widgets.spinBoxPDFMarginX.value()
-        margin_y_mm = self.widgets.spinBoxPDFMarginY.value()
-        desired_mm = self.widgets.spinBoxDesiredSize.value()
-        desired_direction = self.widgets.comboBoxDesiredAxis.currentText()
-        page_rotation = self.widgets.comboBoxPageRotation.currentText()
+        margin_x_mm = self.widgets.RAST_MarginXSpinbox.value()
+        margin_y_mm = self.widgets.RAST_MarginYSpinbox.value()
+        desired_mm = self.widgets.RAST_DesSizeSpinbox.value()
+        desired_direction = self.widgets.RAST_DesAxisCombobox.currentText()
+        page_rotation = self.widgets.RAST_LayoutCombobox.currentText()
 
         A4_width = 210  # mm
         A4_height = 297  # mm
