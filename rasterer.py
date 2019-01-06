@@ -7,9 +7,9 @@ import math
 from graphics_classes import graphicsCrop, graphicsPDF
 import os
 from PDF_draw_functions import createPDF
+from tab_base_class import TabBaseClass
 
-
-class Rasterer:
+class Rasterer(TabBaseClass):
     def __init__(self, parent):
         self.widgets = None
 
@@ -30,25 +30,25 @@ class Rasterer:
 
         self.graphic_tabs = []
 
-    def confirm_UI(self, widgets):
+    def confirmUI(self, widgets):
         self.widgets = widgets
 
-        self.widgets.RAST_CropTSpinbox.valueChanged.connect(self.changeCropTop)
-        self.widgets.RAST_CropBSpinbox.valueChanged.connect(self.changeCropBottom)
-        self.widgets.RAST_CropLSpinbox.valueChanged.connect(self.changeCropLeft)
-        self.widgets.RAST_CropRSpinbox.valueChanged.connect(self.changeCropRight)
+        self.widgets.RAST_CropTSpinbox.valueChanged.connect(self.change_crop_top)
+        self.widgets.RAST_CropBSpinbox.valueChanged.connect(self.change_crop_bottom)
+        self.widgets.RAST_CropLSpinbox.valueChanged.connect(self.change_crop_left)
+        self.widgets.RAST_CropRSpinbox.valueChanged.connect(self.change_crop_right)
 
-        self.widgets.RAST_CropLType.currentIndexChanged.connect(self.changeCropLeft)
-        self.widgets.RAST_CropRType.currentIndexChanged.connect(self.changeCropRight)
-        self.widgets.RAST_CropTType.currentIndexChanged.connect(self.changeCropTop)
-        self.widgets.RAST_CropBType.currentIndexChanged.connect(self.changeCropBottom)
+        self.widgets.RAST_CropLType.currentIndexChanged.connect(self.change_crop_left)
+        self.widgets.RAST_CropRType.currentIndexChanged.connect(self.change_crop_right)
+        self.widgets.RAST_CropTType.currentIndexChanged.connect(self.change_crop_top)
+        self.widgets.RAST_CropBType.currentIndexChanged.connect(self.change_crop_bottom)
 
         self.widgets.RAST_ChooseImageButton.clicked.connect(self.new_file)
 
         self.widgets.centralWidget.layout().setContentsMargins(0,0,0,0)
 
-        self.widgets.RAST_CheckLR.stateChanged.connect(self.lockCheckBoxChanged)
-        self.widgets.RAST_CheckTB.stateChanged.connect(self.lockCheckBoxChanged)
+        self.widgets.RAST_CheckLR.stateChanged.connect(self.lock_checkbox_changed)
+        self.widgets.RAST_CheckTB.stateChanged.connect(self.lock_checkbox_changed)
 
         self.widgets.RAST_CreatepdfButton.clicked.connect(self.pdf_button)
 
@@ -90,7 +90,7 @@ class Rasterer:
         pdf_x_px = printer.width()
         pdf_y_px = printer.height()
 
-        pdf_values = self.getPDF_values(pdf_x_px, pdf_y_px)
+        pdf_values = self.get_pdf_values(pdf_x_px, pdf_y_px)
 
         createPDF(self.widgets.RAST_MarkingCombobox.currentText(), *pdf_values, printer, painter)
 
@@ -101,39 +101,38 @@ class Rasterer:
         for tab in self.graphic_tabs:
             tab.update()
 
-    def lockCheckBoxChanged(self):
+    def lock_checkbox_changed(self):
         self.lock_crop_TB = self.widgets.RAST_CheckTB.isChecked()
         self.lock_crop_LR = self.widgets.RAST_CheckLR.isChecked()
 
-
-    def changeCropLeft(self):
+    def change_crop_left(self):
         """ event when self.widgets.RAST_CropLSpinbox changes value, individual events in order the enable locking"""
         if self.lock_crop_LR:
             self.widgets.RAST_CropRSpinbox.setValue(self.widgets.RAST_CropLSpinbox.value())
             self.widgets.RAST_CropRType.setCurrentIndex(self.widgets.RAST_CropLType.currentIndex())
 
-        self.changeCrop()
+        self.change_crop()
 
-    def changeCropRight(self):
+    def change_crop_right(self):
         """ event when self.widgets.RAST_CropRSpinbox changes value, individual events in order the enable locking"""
         if self.lock_crop_LR:
             self.widgets.RAST_CropLSpinbox.setValue(self.widgets.RAST_CropRSpinbox.value())
             self.widgets.RAST_CropLType.setCurrentIndex(self.widgets.RAST_CropRType.currentIndex())
-        self.changeCrop()
+        self.change_crop()
 
-    def changeCropTop(self):
+    def change_crop_top(self):
         """ event when self.widgets.RAST_CropTSpinbox changes value, individual events in order the enable locking"""
         if self.lock_crop_TB:
             self.widgets.RAST_CropBSpinbox.setValue(self.widgets.RAST_CropTSpinbox.value())
             self.widgets.RAST_CropBType.setCurrentIndex(self.widgets.RAST_CropTType.currentIndex())
-        self.changeCrop()
+        self.change_crop()
 
-    def changeCropBottom(self):
+    def change_crop_bottom(self):
         """ event when self.widgets.RAST_CropBSpinbox changes value, individual events in order the enable locking"""
         if self.lock_crop_TB:
             self.widgets.RAST_CropTSpinbox.setValue(self.widgets.RAST_CropBSpinbox.value())
             self.widgets.RAST_CropTType.setCurrentIndex(self.widgets.RAST_CropBType.currentIndex())
-        self.changeCrop()
+        self.change_crop()
 
     def get_crop_value_left(self):
         image_size = self.graphic_tabs[0].original_pix.size()
@@ -186,7 +185,7 @@ class Rasterer:
 
         return ret_left, ret_right, ret_top, ret_bottom
 
-    def changeCrop(self):
+    def change_crop(self):
         print("crop changed")
         crop_values = self.get_crop_values()
         for tab in self.graphic_tabs:
@@ -202,7 +201,6 @@ class Rasterer:
 
         self.graphic_tabs[1].set_pdf_values(des_size_mm, width, margin_x_mm, margin_y_mm, A4_vertical)
         print("pdf values changed")
-
 
     def set_image(self, location):
         print("setting image from: ", location)
@@ -240,7 +238,7 @@ class Rasterer:
 
         return image_cropped
 
-    def getPDF_values(self, pdf_x_px, pdf_y_px):
+    def get_pdf_values(self, pdf_x_px, pdf_y_px):
         image_cropped = self.get_cropped_image()
 
         margin_x_mm = self.widgets.RAST_MarginXSpinbox.value()

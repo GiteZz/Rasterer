@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QGraphicsScene
 from ui_generated import Ui_MainWindow
 import logging
 from rasterer import Rasterer
+from pdf_split import PDFSplit
 
 image_location = "C:/Users/Gilles/Pictures/TestImages/falcon9morning.jpg"
 
@@ -29,16 +30,21 @@ class MyUI(QtWidgets.QMainWindow):
         self.logger.error("hello")
 
         self.rasterer = Rasterer(self)
+        self.PDF_split = PDFSplit(self)
+
+        self.tabs = [self.rasterer, self.PDF_split]
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
         self.widgets = ui_widgets
-        self.rasterer.confirm_UI(ui_widgets)
+        for tab in self.tabs:
+            tab.confirmUI(ui_widgets)
 
     def resizeEvent(self, *args, **kwargs):
         super().resizeEvent(*args, **kwargs)
         print("resize event")
-        self.rasterer.handle_resizing()
+        for tab in self.tabs:
+            tab.handle_resizing()
 
 
 if __name__ == "__main__":
