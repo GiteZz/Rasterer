@@ -2,13 +2,13 @@ from tab_base_class import TabBaseClass
 from PyQt5.QtWidgets import QPushButton, QSpinBox, QHBoxLayout, QLabel
 from PyQt5.QtWidgets import QGraphicsScene, QFileDialog
 from PyQt5.QtGui import QImage, QPixmap, QColor, QPen, QBrush, QPainter, QIcon
+from PyQt5.QtCore import QPoint, QRect, QSize
 import PyQt5.QtCore
 from pathlib import Path
 import PyPDF2
 import pdf2image
 from PIL import ImageQt, Image
 import os
-from pdf_functions import pdf_page_to_png
 
 
 class PDFSplit(TabBaseClass):
@@ -17,6 +17,10 @@ class PDFSplit(TabBaseClass):
 
         self.first_page_scene = QGraphicsScene()
         self.last_page_scene = QGraphicsScene()
+
+        self.remove_range_size = QSize(25, 25)
+
+        self.current_viewing_pages = [None, None]
 
     def confirmUI(self, widgets):
         self.widgets = widgets
@@ -27,6 +31,7 @@ class PDFSplit(TabBaseClass):
         self.range_from_labels = [self.widgets.SPLIT_FirstToLabel]
         self.range_buttons = [self.widgets.SPLIT_FirstDeleteRangeButton]
         self.range_Hlayouts = [self.widgets.SPLIT_FirstRangeHLayout]
+        self.widgets.SPLIT_FirstDeleteRangeButton.setFixedSize(self.remove_range_size)
 
         self.from_spinboxes[0].valueChanged.connect(self.page_spinbox_changed)
         self.to_spinboxes[0].valueChanged.connect(self.page_spinbox_changed)
@@ -46,9 +51,12 @@ class PDFSplit(TabBaseClass):
         self.pages_scenes = [self.first_page_scene, self.last_page_scene]
         self.graphic_views = [self.widgets.SPLIT_FirstPageView, self.widgets.SPLIT_LastPageView]
 
-        #self.widgets.SPLIT_FirstPageView.fitInView(self.first_page_scene.sceneRect(), PyQt5.QtCore.Qt.KeepAspectRatio)
-
         self.widgets.SPLIT_CreateButton.clicked.connect(self.split_pdf)
+
+        self.widgets.SPLIT_FirstPageView.setHorizontalScrollBarPolicy(1)
+        self.widgets.SPLIT_FirstPageView.setVerticalScrollBarPolicy(1)
+        self.widgets.SPLIT_LastPageView.setHorizontalScrollBarPolicy(1)
+        self.widgets.SPLIT_LastPageView.setVerticalScrollBarPolicy(1)
 
         self.amount_pages = None
 
@@ -77,16 +85,33 @@ class PDFSplit(TabBaseClass):
             self.from_spinboxes[i].setMaximum(self.amount_pages)
             self.to_spinboxes[i].setMaximum(self.amount_pages)
 
-        self.set_pdf_pages(1, 0)
+        if len(self.range_Hlayouts) > 0:
+            self.to_spinboxes[0].setValue(self.amount_pages)
+            self.set_pdf_pages(0)
 
 
+    def get_range(self, index):
+        from_range = self.from_spinboxes[index].value()
+        to_range = self.to_spinboxes[index].value()
 
-    def set_pdf_pages(self, page, page_index):
-        print(f'set pdf page {page}')
-        im = pdf2image.convert_from_path(f'{self.pdf_path}/{self.pdf_name}', first_page=page, last_page=page)[0].convert('RGB')
-        #im = Image.open('C:/Users/Gilles/Downloads/eer.jpg')
-        self.pages_images[page_index] = ImageQt.ImageQt(im)
-        self.pages_pixmap[page_index] = QPixmap.fromImage(self.pages_images[page_index])
+        return from_range, to_range
+
+    def set_pdf_pages(self, range_index):
+        pass
+        if self.pdf_path is None:
+            pass
+
+        pdf_range = self.get_range(range_index)
+
+        for i in range(2):
+            if pdf_range[i] != self.current_viewing_pages[i]:
+                im = pdf2image.convert_from_path(f'{self.pdf_path}/{self.pdf_name}', first_page=pdf_range[i],
+                                                 last_page=pdf_range[i], dpi=100)[0].convert('RGB')
+
+                self.pages_images[i] = ImageQt.ImageQt(im)
+                self.pages_pixmap[i] = QPixmap.fromImage(self.pages_images[i])
+
+        self.current_viewing_pages = pdf_range
 
         self.scale_pages()
 
@@ -119,6 +144,12 @@ class PDFSplit(TabBaseClass):
 
 
     def page_spinbox_changed(self, new_value):
+        sender = self.parent.sender()
+        if sender in self.from_spinboxes:
+            index = self.from_spinboxes.index(sender)
+        else:
+            index = self.to_spinboxes.index(sender)
+        self.set_pdf_pages(index)
         print(f'spinbox changed to new value {new_value}')
 
     def new_range(self):
@@ -138,12 +169,14 @@ class PDFSplit(TabBaseClass):
         self.from_spinboxes[-1].setMinimum(1)
         self.to_spinboxes[-1].setMinimum(1)
 
+        self.range_buttons[-1].setFixedSize(self.remove_range_size)
+
         if self.amount_pages is None:
             self.from_spinboxes[-1].setMaximum(1)
-            self.to_spinboxes[-1].setMinimum(1)
+            self.to_spinboxes[-1].setMaximum(1)
         else:
             self.from_spinboxes[-1].setMaximum(self.amount_pages)
-            self.to_spinboxes[-1].setMinimum(self.amount_pages)
+            self.to_spinboxes[-1].setMaximum(self.amount_pages)
 
 
         self.range_buttons[-1].clicked.connect(self.delete_range)
