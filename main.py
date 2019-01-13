@@ -6,6 +6,7 @@ from ui_generated import Ui_MainWindow
 import logging
 from rasterer import Rasterer
 from pdf_split import PDFSplit
+from pdf_merge import PDFMerge
 
 image_location = "C:/Users/Gilles/Pictures/TestImages/falcon9morning.jpg"
 
@@ -31,8 +32,9 @@ class MyUI(QtWidgets.QMainWindow):
 
         self.rasterer = Rasterer(self)
         self.PDF_split = PDFSplit(self)
+        self.PDF_merge = PDFMerge(self)
 
-        self.tabs = [self.rasterer, self.PDF_split]
+        self.tabs = [self.rasterer, self.PDF_split, self.PDF_merge]
 
     def confirmUI(self, ui_widgets):
         print("confirming ui")
