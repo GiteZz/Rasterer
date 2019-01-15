@@ -213,6 +213,9 @@ class Rasterer(TabBaseClass):
             tab.update()
 
     def get_cropped_image(self):
+        """
+        :return: QImage that is cropped with the values of the UI
+        """
         filename, file_extension = os.path.splitext(self.image_location)
         if file_extension == ".svg":
             e = xml.etree.ElementTree.parse(self.image_location).getroot()
@@ -239,6 +242,12 @@ class Rasterer(TabBaseClass):
         return image_cropped
 
     def get_pdf_values(self, pdf_x_px, pdf_y_px):
+        """
+        Creates a tuple with information to divide the image over the pdf pages with information form the UI
+        :param pdf_x_px: width of pdf
+        :param pdf_y_px: height of pdf
+        :return: Information tuple
+        """
         image_cropped = self.get_cropped_image()
 
         margin_x_mm = self.widgets.RAST_MarginXSpinbox.value()
